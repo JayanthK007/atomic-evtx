@@ -1,0 +1,2 @@
+"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
+"2024-10-20T17:30:33Z","2024-10-20T20:30:33Z","T1003.001","2","Dump LSASS.exe Memory using comsvcs.dll","Server002","System.Object[]","server002\admin_test","2536dee2-12fb-459a-8c37-971844fa73be",,

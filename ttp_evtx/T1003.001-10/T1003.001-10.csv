@@ -1,0 +1,2 @@
+"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
+"2024-10-20T17:55:19Z","2024-10-20T20:55:19Z","T1003.001","10","Powershell Mimikatz","Server002","System.Object[]","server002\admin_test","66fb0bc1-3c3f-47e9-a298-550ecfefacbc",,
