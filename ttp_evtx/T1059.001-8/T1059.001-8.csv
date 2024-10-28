@@ -1,0 +1,2 @@
+"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
+"2024-10-22T20:09:51Z","2024-10-22T23:09:51Z","T1059.001","8","Powershell invoke mshta.exe download","Server002","System.Object[]","server002\admin_test","8a2ad40b-12c7-4b25-8521-2737b0a415af",,

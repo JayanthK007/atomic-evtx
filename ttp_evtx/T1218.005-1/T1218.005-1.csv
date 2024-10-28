@@ -1,0 +1,2 @@
+"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
+"2024-10-26T13:50:05Z","2024-10-26T16:50:05Z","T1218.005","1","Mshta executes JavaScript Scheme Fetch Remote Payload With GetObject","Server002","System.Object[]","server002\admin_test","1483fab9-4f52-4217-a9ce-daa9d7747cae",,

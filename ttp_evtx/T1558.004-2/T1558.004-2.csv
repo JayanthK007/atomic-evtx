@@ -1,0 +1,2 @@
+"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
+"2024-10-28T07:08:38Z","2024-10-28T09:08:38Z","T1558.004","2","Get-DomainUser with PowerView","Server002","System.Object[]","server002\admin_test","d6139549-7b72-4e48-9ea1-324fc9bdf88a",,

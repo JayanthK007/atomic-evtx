@@ -1,0 +1,2 @@
+"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
+"2024-10-27T17:33:30Z","2024-10-27T19:33:30Z","T1548.002","3","Bypass UAC using Fodhelper","Server002","System.Object[]","server002\admin_test","58f641ea-12e3-499a-b684-44dee46bd182",,

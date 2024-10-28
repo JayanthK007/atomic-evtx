@@ -1,0 +1,2 @@
+"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
+"2024-10-28T08:12:38Z","2024-10-28T10:12:38Z","T1562.001","13","AMSI Bypass - AMSI InitFailed","Server002","System.Object[]","server002\admin_test","695eed40-e949-40e5-b306-b4031e4154bd",,

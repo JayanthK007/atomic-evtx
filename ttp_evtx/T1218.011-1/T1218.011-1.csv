@@ -1,0 +1,2 @@
+"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
+"2024-10-26T15:57:40Z","2024-10-26T18:57:40Z","T1218.011","1","Rundll32 execute JavaScript Remote Payload With GetObject","Server002","System.Object[]","server002\admin_test","57ba4ce9-ee7a-4f27-9928-3c70c489b59d",,

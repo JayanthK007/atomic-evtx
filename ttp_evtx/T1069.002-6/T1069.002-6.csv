@@ -1,0 +1,2 @@
+"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
+"2024-10-23T13:18:00Z","2024-10-23T16:18:00Z","T1069.002","6","Find Local Admins via Group Policy (PowerView)","Server002","System.Object[]","server002\admin_test","64fdb43b-5259-467a-b000-1b02c00e510a",,

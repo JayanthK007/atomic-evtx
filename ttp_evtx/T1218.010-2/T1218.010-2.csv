@@ -1,0 +1,2 @@
+"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
+"2024-10-26T15:43:53Z","2024-10-26T18:43:53Z","T1218.010","2","Regsvr32 remote COM scriptlet execution","Server002","System.Object[]","server002\admin_test","c9d0c4ef-8a96-4794-a75b-3d3a5e6f2a36",,

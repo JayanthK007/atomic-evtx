@@ -1,0 +1,2 @@
+"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
+"2024-10-26T22:01:38Z","2024-10-27T01:01:38Z","T1529","1","Shutdown System - Windows","Server002","System.Object[]","server002\admin_test","ad254fa8-45c0-403b-8c77-e00b3d3e7a64","4808","0"

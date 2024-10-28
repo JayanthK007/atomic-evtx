@@ -1,0 +1,2 @@
+"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
+"2024-10-21T12:32:04Z","2024-10-21T15:32:04Z","T1033","3","Find computers where user has session - Stealth mode (PowerView)","Server002","System.Object[]","server002\admin_test","29857f27-a36f-4f7e-8084-4557cd6207ca",,

@@ -1,0 +1,2 @@
+"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
+"2024-10-23T17:21:36Z","2024-10-23T20:21:36Z","T1078.004","2","Azure Persistence Automation Runbook Created or Modified","Server002","System.Object[]","server002\admin_test","348f4d14-4bd3-4f6b-bd8a-61237f78b3ac","6540","0"
