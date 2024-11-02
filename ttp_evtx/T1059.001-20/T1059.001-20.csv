@@ -1,2 +1,0 @@
-"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
-"2024-10-23T11:59:56Z","2024-10-23T14:59:56Z","T1059.001","20","Abuse Nslookup with DNS Records","Server002","System.Object[]","server002\admin_test","999bff6d-dc15-44c9-9f5c-e1051bfc86e1",,

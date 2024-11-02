@@ -1,2 +1,0 @@
-"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
-"2024-10-22T20:13:23Z","2024-10-22T23:13:23Z","T1059.001","10","PowerShell Fileless Script Execution","Server002","System.Object[]","server002\admin_test","fa050f5e-bc75-4230-af73-b6fd7852cd73",,

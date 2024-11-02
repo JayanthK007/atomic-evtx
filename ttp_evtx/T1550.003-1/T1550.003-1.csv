@@ -1,2 +1,0 @@
-"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
-"2024-10-27T19:06:09Z","2024-10-27T21:06:09Z","T1550.003","1","Mimikatz Kerberos Ticket Attack","Server002","System.Object[]","server002\admin_test","dbf38128-7ba7-4776-bedf-cc2eed432098",,

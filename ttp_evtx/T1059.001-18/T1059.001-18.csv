@@ -1,2 +1,0 @@
-"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
-"2024-10-23T11:52:46Z","2024-10-23T14:52:46Z","T1059.001","18","PowerShell Invoke Known Malicious Cmdlets","Server002","System.Object[]","server002\admin_test","49eb9404-5e0f-4031-a179-b40f7be385e3",,

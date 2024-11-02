@@ -1,2 +1,0 @@
-"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
-"2024-10-26T18:54:43Z","2024-10-26T21:54:43Z","T1482","7","Get-ForestTrust with PowerView","Server002","System.Object[]","server002\admin_test","58ed10e8-0738-4651-8408-3a3e9a526279",,

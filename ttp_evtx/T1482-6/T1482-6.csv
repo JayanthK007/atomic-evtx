@@ -1,2 +1,0 @@
-"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
-"2024-10-26T18:51:22Z","2024-10-26T21:51:22Z","T1482","6","Get-DomainTrust with PowerView","Server002","System.Object[]","server002\admin_test","f974894c-5991-4b19-aaf5-7cc2fe298c5d",,

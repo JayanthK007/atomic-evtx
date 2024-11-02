@@ -1,2 +1,0 @@
-"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
-"2024-10-22T15:24:15Z","2024-10-22T18:24:15Z","T1047","9","WMI Execute rundll32","Server002","System.Object[]","server002\admin_test","00738d2a-4651-4d76-adf2-c43a41dfb243",,

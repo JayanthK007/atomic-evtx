@@ -1,2 +1,0 @@
-"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
-"2024-10-23T11:56:27Z","2024-10-23T14:56:27Z","T1059.001","19","PowerUp Invoke-AllChecks","Server002","System.Object[]","server002\admin_test","1289f78d-22d2-4590-ac76-166737e1811b",,

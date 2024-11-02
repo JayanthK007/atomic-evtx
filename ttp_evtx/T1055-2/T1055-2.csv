@@ -1,2 +1,0 @@
-"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
-"2024-10-22T17:17:42Z","2024-10-22T20:17:42Z","T1055","2","Remote Process Injection in LSASS via mimikatz","Server002","System.Object[]","server002\admin_test","3203ad24-168e-4bec-be36-f79b13ef8a83",,

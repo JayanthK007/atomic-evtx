@@ -1,2 +1,0 @@
-"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
-"2024-10-27T22:31:15Z","2024-10-28T00:31:15Z","T1555.004","2","WinPwn - Loot local Credentials - Invoke-WCMDump","Server002","System.Object[]","server002\admin_test","fa714db1-63dd-479e-a58e-7b2b52ca5997",,

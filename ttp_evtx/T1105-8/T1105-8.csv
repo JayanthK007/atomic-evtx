@@ -1,2 +1,0 @@
-"Execution Time (UTC)","Execution Time (Local)","Technique","Test Number","Test Name","Hostname","IP Address","Username","GUID","ProcessId","ExitCode"
-"2024-10-24T11:18:08Z","2024-10-24T14:18:08Z","T1105","8","certutil download (verifyctl)","Server002","System.Object[]","server002\admin_test","ffd492e3-0455-4518-9fb1-46527c9f241b",,
