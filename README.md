@@ -106,3 +106,26 @@ In addition to the data cleaning done for the `attacks_by_category_atomic_remove
 - `golden ticket`
 - `kerberoast`
 - `MalDoc`
+- `NPPSpy`
+- `ProcDump`
+- `pypykatz`
+- `Out-Minidump`
+- `createdump`
+- `dumper`
+- `Qakbot`
+- `adidnsdump`
+- `Get-AdComputer`
+- `ADSISearcher`
+- `botnet`
+- `exfil`
+- `PsExec`
+- `Evil-WinRMv`
+- `Backstab`
+- `SOAPHound`
+- `ADRecon`
+- `Kerbrute`
+- `Snaffler`
+- `LaZagne`
+- `Firepwd`
+- `WebBrowserPassView`
+- `SDelete`
