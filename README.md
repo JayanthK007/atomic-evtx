@@ -6,11 +6,15 @@ This directory contains raw EVTX files with JSON logs filtered to exclude entrie
 Within the JSON logs, the following strings were replaced with a random 5-character string:
 - `atomic`
 - `atomics`
-- `red`
 - `team`
 - `atomic-red-team`
+- `redcanary`
 - `redcanaryco`
 - `canary`
+- `atomicredteam`
+- `payload`
+- `Red team`
+
 
 Additionally, event entries containing any of the following strings were deleted from the JSON logs:
 - `"wevtutil.exe" cl Microsoft-Windows-Sysmon/Operational`
@@ -60,3 +64,5 @@ In addition to the data cleaning done for the `attacks_by_category_atomic_remove
 - `exfiltration`
 - `dnsexfil.ps1`
 - `Invoke-DNSExfiltrator`
+- `Invoke-MalDoc`
+- `collection`
