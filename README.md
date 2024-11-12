@@ -58,3 +58,5 @@ In addition to the data cleaning done for the `attacks_by_category_atomic_remove
 - `uacbypass`
 - `Psiphon`
 - `exfiltration`
+- `dnsexfil.ps1`
+- `Invoke-DNSExfiltrator`
