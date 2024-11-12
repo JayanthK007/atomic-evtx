@@ -23,7 +23,7 @@ In total, the attack category technique and attack count in each category is as 
 | Privilege Escalation | 119 |
 | Discovery | 180 |
 | Defense Evasion | 367 |
-
+| **Total** | **1064** |
 
 ### Motivation
 While similar datasets exist, they are often limited by size, outdated attack simulations, or incomplete logging. The Atomic-EVTX dataset was designed to address these gaps, providing a more extensive, current, and structured dataset to support cybersecurity research and threat analysis.
