@@ -27,10 +27,10 @@ In total, the attack category technique and attack count in each category is as 
 
 ### Motivation
 While similar datasets exist, they are often limited by size, outdated attack simulations, or incomplete logging. The Atomic-EVTX dataset was designed to address these gaps, providing a more extensive, current, and structured dataset to support cybersecurity research and threat analysis.
----
+***
 ### `attacks_by_category_unfiltered`
 This directory contains **raw, unfiltered EVTX log and JSON files** from a Windows 10 VM immediately after each attack simulation. The logs in this directory have not undergone any modifications or filtering. Each EVTX log file is accompanied by a JSON version of the data for versatility in data processing and analysis. This dataset is valuable for scenarios where custom manipulation, filtering, or transformation of logs is required. For instance, it can be used to convert logs from JSON format into CSV (for tabletop exercises or simulated investigations) or XML (as an alternative format for processing and analysis).
----
+***
 ### `attacks_by_category_atomic_removed`
 This directory contains **raw EVTX and filtered JSON logs** where entries specifically related to the Atomic Red Team framework and pre-attack log-clearing events have been removed. Offensive security tool names remain intact in these logs. This dataset is useful for evaluating the ability to detect known malicious tools within logs and the environment, without the interference of Atomic Red Team framework artifacts that might otherwise compromise the integrity of detection or investigation results.
 
@@ -52,7 +52,7 @@ Additionally, event entries containing any of the following strings were removed
 - `"wevtutil.exe" cl System`
 - `"wevtutil.exe" cl Security`
 - `"wevtutil.exe" cl "Windows PowerShell"`
----
+***
 ### **`attacks_by_category_atomic_and_tools_removed`**  
 This directory contains **raw EVTX files with JSON logs filtered**  to exclude entries related to the Atomic Red Team Framework, pre-attack-simulation log-clearing events, and offensive security tool names (e.g., WinPwn.ps1, Meterpreter). This dataset is considered the most "challenging", as the identification of malicious activity relies solely on either executed PowerShell scripts (which require more detailed analysis) or known combinations of Events (or Event IDs) that are indicative of malicious or suspicious behavior.
 
