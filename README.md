@@ -56,7 +56,7 @@ Additionally, event entries containing any of the following strings were removed
 ### **Directory: `attacks_by_category_atomic_and_tools_removed`**  
 This directory contains **raw EVTX files with JSON logs filtered**  to exclude entries related to the Atomic Red Team Framework, pre-attack-simulation log-clearing events, and offensive security tool names (e.g., WinPwn.ps1, Meterpreter). This dataset is considered the most "challenging", as the identification of malicious activity relies solely on either executed PowerShell scripts (which require more detailed analysis) or known combinations of Events (or Event IDs) that are indicative of malicious or suspicious behavior.
 
-In addition to the data cleaning done for the `attacks_by_category_atomic_removed` logs, the following strings were replaced with the word `file`:
+In addition to the data cleaning done for the `attacks_by_category_atomic_removed` logs, the following strings were replaced with the word `script` (i.e. `WinPwn.ps1` turned into `script.ps1`):
 - `WinPwn`
 - `Meterpreter`
 - `Empire`
@@ -67,10 +67,10 @@ In addition to the data cleaning done for the `attacks_by_category_atomic_remove
 - `BloodHound`
 - `Responder`
 - `S3cur3Th1sSh1t`
-- `WinPwn`
 - `hlldz`
 - `Invoke-Phant0m`
 - `PowerSharpPack`
+- `PowerSharp`
 - `Sharpweb`
 - `MzHmO`
 - `SharpUp`
@@ -79,7 +79,7 @@ In addition to the data cleaning done for the `attacks_by_category_atomic_remove
 - `Invoke-WMIExec`
 - `Kevin-Robertson`
 - `obfuscatedps`
-- `dccuac.ps1`
+- `dccuac`
 - `Invoke-SharpWatson`
 - `Rubeus`
 - `ExternalPayloads`
@@ -92,7 +92,17 @@ In addition to the data cleaning done for the `attacks_by_category_atomic_remove
 - `uacbypass`
 - `Psiphon`
 - `exfiltration`
-- `dnsexfil.ps1`
+- `dnsexfil`
 - `Invoke-DNSExfiltrator`
 - `Invoke-MalDoc`
-- `collection`
+- `blackbyte`
+- `netwire`
+- `ursnif`
+- `bad potato (badpotato)`
+- `juicy potato (juicypotato)`
+- `petitpotam`
+- `octopus`
+- `attack`
+- `golden ticket`
+- `kerberoast`
+- `MalDoc`
