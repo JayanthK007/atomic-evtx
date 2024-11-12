@@ -24,17 +24,15 @@ In total, the attack category technique and attack count in each category is as 
 | Discovery | 180 |
 | Defense Evasion | 367 |
 
-The table has been organized in ascending order by count, matching the vertical layout of the original bar chart. Let me know if you'd like the data organized differently!
 
 ### Motivation
 While similar datasets exist, they are often limited by size, outdated attack simulations, or incomplete logging. The Atomic-EVTX dataset was designed to address these gaps, providing a more extensive, current, and structured dataset to support cybersecurity research and threat analysis.
 
 ### `attacks_by_category_unfiltered`
-This directory contains **raw, unfiltered EVTX log files** from a Windows 10 VM immediately after each attack simulation. The logs in this directory have not undergone any modifications or filtering. Each EVTX log file is accompanied by a JSON version of the data for versatility in data processing and analysis.
+This directory contains **raw, unfiltered EVTX log and JSON files** from a Windows 10 VM immediately after each attack simulation. The logs in this directory have not undergone any modifications or filtering. Each EVTX log file is accompanied by a JSON version of the data for versatility in data processing and analysis. This dataset is valuable for scenarios where custom manipulation, filtering, or transformation of logs is required. For instance, it can be used to convert logs from JSON format into CSV (for tabletop exercises or simulated investigations) or XML (as an alternative format for processing and analysis).
 
 ### `attacks_by_category_atomic_removed`
-This directory contains **filtered EVTX and JSON logs** where entries specifically related to the Atomic Red Team framework and pre-attack log-clearing events have been removed. Offensive security tool names remain intact in these logs.
-
+This directory contains **raw EVTX and filtered JSON logs** where entries specifically related to the Atomic Red Team framework and pre-attack log-clearing events have been removed. Offensive security tool names remain intact in these logs. This dataset is useful for evaluating the ability to detect known malicious tools within logs and the environment, without the interference of Atomic Red Team framework artifacts that might otherwise compromise the integrity of detection or investigation results.
 
 Within the JSON logs, the following strings were replaced with a string `data`:
 - `atomic`
@@ -48,7 +46,7 @@ Within the JSON logs, the following strings were replaced with a string `data`:
 - `payload`
 - `Red team`
 
-Additionally, event entries containing any of the following strings were deleted from the JSON logs (these logs are a residual result of the dataset generation process itself):
+Additionally, event entries containing any of the following strings were removed from the JSON logs, as they represent residual artifacts from the dataset generation process:
 - `"wevtutil.exe" cl Microsoft-Windows-Sysmon/Operational`
 - `"wevtutil.exe" cl Application`
 - `"wevtutil.exe" cl System`
@@ -56,10 +54,10 @@ Additionally, event entries containing any of the following strings were deleted
 - `"wevtutil.exe" cl "Windows PowerShell"`
 
 ### **Directory: `attacks_by_category_atomic_and_tools_removed`**  
-This directory contains raw EVTX files with JSON logs filtered to exclude entries related to the Atomic Red Team Framework, pre-attack-simulation log-clearing events, and offensive security tool names (e.g., WinPwn.ps1, Meterpreter).
+This directory contains **raw EVTX files with JSON logs filtered**  to exclude entries related to the Atomic Red Team Framework, pre-attack-simulation log-clearing events, and offensive security tool names (e.g., WinPwn.ps1, Meterpreter). This dataset is considered the most "challenging", as the identification of malicious activity relies solely on either executed PowerShell scripts (which require more detailed analysis) or known combinations of Events (or Event IDs) that are indicative of malicious or suspicious behavior.
 
 In addition to the data cleaning done for the `attacks_by_category_atomic_removed` logs, the following strings were replaced with the word `file`:
-- `WinPwn.ps1`
+- `WinPwn`
 - `Meterpreter`
 - `Empire`
 - `Cobalt Strike`
