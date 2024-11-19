@@ -1,0 +1,1093 @@
+Directory Name,AI Response
+Modify VSS Service Permissions,"After analyzing the provided Windows event logs, several key points of interest stand out regarding potential malicious or suspicious activities:
+
+1. **Log File Clearing Events:**
+   - **Event ID 1102 (Security Log Cleared)** and **Event ID 104 (System and PowerShell Logs Cleared)** are present. The action of clearing logs can be indicative of an attempt to hide malicious activity. These events were executed by a user named `admin_test`.
+
+2. **Time Manipulation:**
+   - **Event ID 4616 (System Time Changed)** indicates a backward time adjustment from 2024-10-26 20:27:33.956 to 2024-10-26 20:27:29.248. While time adjustments can happen naturally, they can also be used to disrupt log timelines, potentially hiding specific sequences of events.
+
+3. **Privilege Escalation:**
+   - **Event ID 4672 (Special Privileges Assigned)** was noted for the `admin_test` user, which grants high-level privileges including SeDebugPrivilege, SeTakeOwnershipPrivilege, etc. Such privileges can be abused for malicious purposes.
+
+4. **Command Execution and Process Activity:**
+   - **Sysmon Logs** indicate the execution of various processes using elevated privileges:
+     - `wevtutil.exe` is used multiple times (`cl Application`, `cl System`, `cl Security`, `cl Windows PowerShell`) to clear event logs, consistent with attempts to cover tracks.
+     - The `cmd.exe` execution with suspicious Service Control (`sc.exe`) command modifying security descriptors for VSS (Volume Shadow Service) is unusual and could indicate a configuration change with potential malicious intent.
+
+5. **Network and Credential Activity:**
+   - **Event ID 4624 (An account was successfully logged on)** shows NTLM logons from a workstation named `DESKTOP-3HL5B2P` with elevated tokens, corresponding with high-level privilege activities under the `admin_test` account. Such patterns can suggest lateral movement or unauthorized access attempts.
+
+Given this information, the activity documented in the logs is highly indicative of an attempt to compromise the machine by granting and using high-level privileges to clear logs and potentially perform further malicious activities. The evidence of log clearing, time changes, privilege escalation, and suspicious command execution collectively point to behavior consistent with malicious activity.
+
+**Resolution: MALICIOUS**
+
+**Guidance on Further Actions:**
+- Immediately isolate the affected host from the network to prevent further compromise.
+- Conduct a deeper forensic analysis to identify the exact source and vector of the compromise.
+- Verify user accounts, especially `admin_test`, and credential usage across the network.
+- Review and harden security configurations, especially concerning critical services like VSS.
+- Restore the system to a known secure state from backups, ensuring that the backup does not contain malicious modifications.
+- Implement stricter monitoring and logging practices to prevent and detect future incidents."
+Disable System Restore Through Registry,"Based on the analysis of the provided Windows event logs, here is a breakdown of the activities observed:
+
+### Sysmon Logs
+
+1. **Command Execution:**
+   - **Process:** `wevtutil.exe` executed multiple times with the `cl` (clear) option to clear logs from channels such as Microsoft-Windows-Sysmon, Application, System, and Security. This behavior is often associated with attempts to cover up tracks after unwanted or unauthorized changes.
+   - **User:** All commands were executed by `SERVER002\admin_test`.
+
+2. **Registry Modifications:**
+   - **Process:** `cmd.exe` executed with several `reg add` commands that disable System Restore functions in the registry. These modifications can be an indicator of malicious intent as they can prevent system rollback in case of compromise.
+   - **User:** `SERVER002\admin_test`.
+
+3. **System Utility Executions:**
+   - **Processes:** `hostname.exe`, `whoami.exe`, and `conhost.exe` were executed by the `admin_test` user, which could be part of routine checks or scripts but may also be tools used by an attacker to gather information about the system.
+
+### System and Security Logs
+
+1. **Log Clearance:**
+   - **EventID 104 and 1102:** These events indicate that the `admin_test` user cleared the logs for the System, Windows PowerShell, and Security channels. Clearing these logs is a common tactic used by attackers to hide traces of their activities.
+
+### Observations and Conclusion
+1. The consistent use of `wevtutil.exe` to clear logs on various channels suggests an attempt to hide activities that could be malicious.
+2. The disabling of system restore points through registry modifications is a concerning activity as it increases the risk of persistence and complicates recovery efforts.
+3. The combination of clearing event logs and disabling recovery features is indicative of potentially malicious behavior.
+
+**Resolution: MALICIOUS**
+
+### Recommendations
+- **Immediate Actions:**
+  - Isolate `Server002` from the network to prevent potential lateral movement.
+  - Perform a full forensic analysis of the system to identify any other malicious activity or unauthorized changes.
+  - Review user account activities and permissions for `admin_test`.
+  - Restore the registry settings to re-enable system restore points.
+
+- **Long-Term Actions:**
+  - Enhance logging and monitoring to detect similar activities in the future.
+  - Implement stricter access controls and audit policies to monitor log clearance and registry changes.
+  - Educate users on security best practices and the importance of maintaining system recovery features."
+Windows - Delete Volume Shadow Copies via WMI,"Upon reviewing the provided event logs from the Windows host, several indicators suggest suspicious or potentially malicious activities:
+
+1. **Event Log Clearing**:
+   - Event log entries from both the System and Security logs indicate that logs have been cleared. Specifically, Event ID 104 in the System log and Event ID 1102 in the Security log show that the logs were cleared by the user `admin_test`. While log clearing can sometimes occur during routine maintenance, it often signifies attempts to cover tracks following unauthorized or malicious activities.
+
+2. **Usage of `vssadmin.exe`**:
+   - The execution of `vssadmin.exe` with the command `list shadows` by the user `admin_test` in the Sysmon logs. This utility can be used benignly but is frequently abused by attackers to manipulate shadow copies for data exfiltration or ransomware activities.
+
+3. **Windows Management Instrumentation (WMI) Command**:
+   - Another Sysmon entry shows `cmd.exe` executing a command to delete shadow copies using `wmic.exe shadowcopy delete`. This activity is highly suspect and often associated with ransomware or other malicious operations to hinder recovery efforts by removing backup copies.
+
+4. **Frequent Execution of `wevtutil.exe`**:
+   - The `wevtutil.exe` command is used multiple times to clear event logs across different channels (`Sysmon`, `System`, and `Security`). This indicates an attempt to delete forensic evidence, which is a known tactic by threat actors to cover their tracks after malicious activities.
+
+5. **Command Line with Process Execution**:
+   - The logs show the execution of several command-line processes (`cmd.exe`, `wevtutil.exe`, `wmic.exe`) with potential suspicious patterns. The combination of these processes being triggered with commands for shadow copy and event log manipulation is indicative of potentially harmful intentions.
+
+6. **Integrity Level and High Privilege Use**:
+   - Many processes run at a high integrity level under the `admin_test` account, suggesting an elevation of privileges to perform potentially unauthorized changes.
+
+Considering these observations, the logs suggest coordinated actions to manipulate system state, clear evidence of actions taken, and potentially disable system recovery mechanisms such as shadow copies.
+
+Based on the analysis, I classify this activity as **MALICIOUS**. There seems to be a clear attempt to obfuscate potentially harmful modifications made to the system.
+
+### Guidance on How to Proceed:
+1. **Immediate Containment and Investigation**:
+   - Isolate the affected system from the network to prevent further malicious activities or lateral movement.
+   - Conduct a deeper forensic analysis on the host to identify potential malware or other threat actor footprints.
+
+2. **Restore and Backup Analysis**:
+   - Investigate recent backup or shadow copy policies to assess any data loss due to the shadow copy deletions.
+   - Consider restoring the system from a clean backup, ensuring it predates the suspicious activities.
+
+3. **Review and Audit Security Controls**:
+   - Audit user accounts and privilege assignments, especially focusing on the `admin_test` account.
+   - Implement stricter logging and monitoring to detect similar activities in the future, including real-time alerts for log clearing attempts.
+
+4. **User Awareness and Training**:
+   - Provide security training focused on recognizing and reporting suspicious behavior, especially regarding the use of administrative privileges.
+
+Taking these steps will aid in mitigating the immediate threat and help strengthen overall security posture moving forward."
+Windows - Disable the SR scheduled task,"After analyzing the provided event logs from the Windows machine, several patterns of activity suggest potential malicious behavior. Here's a detailed breakdown of the logs:
+
+1. **Event Log Clearing**:
+   - Several instances of the `wevtutil` utility being used to clear Windows event logs (""cl"" command is used to clear events from the specified log). Look at the following instances:
+     - Logs show ""wevtutil"" being used to clear the ""Application"", ""System"", and ""Security"" logs by ""admin_test"" user, which is unconventional unless there is a specific administrative procedure in place.
+   - **Events**:
+     - Event ID 104: System logs cleared.
+     - Event ID 1102: Security log was cleared.
+
+   Clearing event logs is a common step attackers take to erase traces of their activities to prevent detection by security investigators.
+
+2. **Suspicious Command Execution**:
+   - The use of `cmd.exe` to disable a scheduled task, specifically the System Restore task which could hinder system recovery processes after malicious actions.
+   - **Sysmon Event ID 1**: 
+     - Command executed: ```schtasks.exe /Change /TN ""\Microsoft\Windows\SystemRestore\SR"" /disable```
+   - This activity is particularly suspicious as it disables a Windows feature crucial for recovery and remediation.
+
+3. **Changes in System Time**:
+   - There are log entries indicating changes in system time (Event ID 4616 in the Security logs and Event ID 1 in the Kernel-General logs).
+   - This could be normal behavior due to NTP synchronization or time zone adjustments, but when combined with other suspicious activities, it warrants further investigation.
+
+4. **Multiple Execution of Legitimate Tasks in a Short Period**:
+   - Multiple instances of `MicrosoftEdgeUpdate.exe` executing shortly after each other. Although it's legitimate software, the frequency and timing might suggest misuse for suspicious purposes or an attempt to blend in with legitimate activities.
+
+5. **Use of Administrative Credentials**:
+   - The operations and manipulations were carried out using the `admin_test` account, indicating either misuse or potential compromise of administrative credentials.
+
+**Resolution**: Based on the detailed analysis of the logs, the predominant evidence points to activities that are highly indicative of malicious actions. These activities include the clearing of event logs, disabling of system recovery features, and irregular behavior associated with critical commands and scripts.
+
+Final resolution: **MALICIOUS**
+
+**Recommendations**:
+- Conduct a full forensic investigation on the system to identify how access was obtained and any other actions that were taken.
+- Audit and secure access controls, especially admin accounts like `admin_test`.
+- Review and restrict the use of utilities like `wevtutil`, `cmd.exe`, and `schtasks.exe` through policy adjustments and application whitelisting.
+- Restore and verify the integrity of key system functions like Event Logs and System Restore.
+- Monitor other hosts in the network for similar activities."
+ESXi - Avoslocker enumerates VMs and forcefully kills VMs,"### Detailed Analysis
+
+- **Suspicious Process Execution**: 
+  - The `cmd.exe` process was executed with a command line initiating `plink.exe`, an SSH client, in a somewhat suspicious manner. The command included connecting to `atomic.local` using the root account with a password (`pass`) provided in plaintext, and executing a file located at `C:\\Users\\ADMIN_~1\\AppData\\Local\\Temp\\AtomicRedTeam\\T1529\\src\\esx_avoslocker_kill_vm.txt`. This suggests potential unauthorized remote access or lateral movement, which is a common behavior of malicious actors.
+
+- **Log Clearing**: 
+  - Security and System logs were cleared at `2024-10-27 12:04:10`, initiated by the `admin_test` user. Clearing logs is not common in routine operations and often indicates an attempt to cover tracks of malicious activity. This event is a highly suspicious action especially considering no legitimate administration task would be performed without leaving a trace.
+
+- **High Integrity Level**: 
+  - Several processes were running with a high integrity level, including critical system utilities like `wevtutil.exe`. While not in itself malicious, combined with the other events, it suggests actions with potentially escalated privileges. The execution of programs with high integrity levels should be scrutinized for legitimacy.
+
+- **Wevtutil and PowerShell Usage**: 
+  - `wevtutil.exe` was executed multiple times, clearing different event logs (`Operational`, `Application`, `System`, and `Security`). It's often used for legitimate purposes, but when logs are cleared around the time suspicious commands are executed, it raises red flags.
+
+- **Network Activity with Potential Payload**: 
+  - The `plink.exe` operation is possibly a confirmed attempt at remote communication, potentially indicating an attempt to execute a payload on a remote machine.
+
+### Assessment and Conclusion:
+
+Given these findings, the activity within the logs, especially the execution of `cmd.exe` and `plink.exe`, and the clearing of the logs are strong indicators of malicious behavior. The evidence suggests an attempt at unauthorized remote access and possibly lateral movement within the network, with actions taken to cover these tracks by clearing logs.
+
+### Resolution: MALICIOUS
+
+Given the nature of these events, it's evident that the activity captured in the logs is indicative of malicious actions. Immediate steps should be taken to isolate the system, conduct a thorough forensic analysis, and evaluate the extent of the unauthorized access to determine and mitigate further risk to the environment. Further investigation will include identifying other potentially affected systems and reviewing network traffic logs around the time of suspect activities for additional malicious indicators."
+Replace Desktop Wallpaper,"Upon reviewing the provided Windows event logs, there are several observations and areas of focus:
+
+### Key Observations:
+
+1. **Event Log Clearing:**
+   - Multiple entries across different logs indicate that log files were cleared:
+     - System log (Event ID: 104): Cleared by user ""admin_test"" for channels ""System"" and ""Windows PowerShell"".
+     - Security log (Event ID: 1102): Indicates the security log was cleared by the same user.
+   - The frequent log clearance suggests an attempt to hide activities, which is a common tactic used by malicious actors.
+
+2. **PowerShell Activity:**
+   - Unusual PowerShell scripts were executed, changing the desktop wallpaper by downloading an image from an external URL: ""https://redcanary.com/wp-content/uploads/Atomic-Red-Team-Logo.png"".
+   - The log entries showcase command-line execution and code injection via PowerShell using `add-type` to define a class to change system settings. Such behavior can indicate a script or attack used to obfuscate or disguise activity on the system.
+
+3. **Process Execution:**
+   - The `wevtutil.exe` utility was used to clear event logs (as shown in Sysmon logs), fitting the pattern of an attempt to cover tracks.
+   - High integrity level processes like `wevtutil.exe` and `wsmprovhost.exe` are involved, executed by the user ""SERVER002\admin_test"".
+
+4. **Edge Update Processes:**
+   - Several entries show processes related to Microsoft Edge updating (e.g., `MicrosoftEdgeUpdate.exe`). However, there seems to be no immediate indication that these are involved in unusual or malicious activity on their own.
+
+### Assessment:
+The combination of log clearing activities, notable PowerShell script execution, and the use of `wevtutil.exe` strongly suggest malicious behavior. The patterns observed are typical of post-exploitation tactics where an attacker attempts to remain undetected after gaining a foothold on the system.
+
+### Resolution:
+- **MALICIOUS** - The activities noted are indicative of malicious actions. The event log clearing, PowerShell script execution designed to alter system behavior, and the process execution hierarchy provide sufficient evidence to classify the activities as malicious.
+
+### Guidance & Next Steps:
+- **Immediate Actions:**
+  - Isolate the affected host from the network to prevent further potential malicious actions.
+  - Conduct a forensic analysis of the host to identify malware or unauthorized access.
+  - Check for network connections made by the machine around the event times for further indicators of compromise.
+  - Review and tighten security and monitoring on all other devices in the network to spot any similar activities.
+
+- **Long-term Actions:**
+  - Implement stricter logging policies and monitoring to detect any such activities promptly in the future.
+  - Conduct a security awareness program to educate administrators on the risks of clearing logs and running unknown scripts.
+  - Ensure endpoint protection solutions are updated and capable of detecting similar PowerShell and log-clearing activities."
+Remove Account From Domain Admin Group,"Upon thorough analysis of the provided log entries, several indicators suggest potential malicious activity and possible system compromise:
+
+1. **Event Log Clearing (System logs and Security logs)**:
+   - There are multiple entries in both the System log (EventID 104) and Security log (EventID 1102) indicating that logs were cleared by the user ""admin_test"". This action is performed without backing up the logs, which is often an attempt to cover malicious activities.
+
+2. **Wevtutil Executions (Sysmon logs)**:
+   - Multiple executions of `wevtutil.exe` were observed, specifically clearing the logs for different channels such as System, Security, and Windows PowerShell. This is further supported by the command lines observed in the process execution logs. The execution of `wevtutil.exe` with intent to clear logs aligns with suspicious and potentially malicious behavior traditionally used to cover tracks.
+
+3. **Suspicious PowerShell Script Execution (PowerShell logs and Sysmon logs)**:
+   - A PowerShell script was executed with a command that manipulates Active Directory group memberships. Specifically, it attempts to remove a user from the ""Domain Admins"" group using credentials constructed within the script. Such behavior is highly suspicious as it involves privilege manipulation and the use of PowerShell with potentially escalated privileges.
+   - The script includes plain text password handling and credential objects, adding to its suspicious nature.
+
+4. **Other Observed Behavior**:
+   - Execution of `whoami.exe` and `hostname.exe` can be part of an attacker’s reconnaissance phase to gather environment information.
+   - While updates to Microsoft Edge are observed in the logs, the presence of Edge updates does not directly imply malicious activity as it could be routine software maintenance. However, the execution context and timing with other suspicious activities mean they should be reviewed within the wider investigation.
+
+Based on the above findings, the logs contain strong indicators of malicious activities, including attempts to clear logs and a suspicious PowerShell command for domain group manipulation. Therefore, the risk assessed from these logs is high with this activity aligned with stealthy, unauthorized access attempts and privilege escalation.
+
+**Resolution**: MALICIOUS
+
+**Guidance**:
+- Immediate investigation and containment actions should be undertaken. Verify the credentials and roles of ""admin_test"" and assess whether they have been compromised.
+- Review all PowerShell activity thoroughly on this host and potentially across the environment.
+- Check for any unauthorized changes made to group memberships in Active Directory.
+- Ensure that you have captured the system for forensic analysis before further actions might clear evidence.
+- Reassess security measures, including monitoring and logging configurations, to prevent or quickly identify similar future activities."
+Delete User - Windows,"### Detailed Analysis and Evaluation
+
+After analyzing the provided Windows event logs, several observations of potentially suspicious or malicious activity can be made:
+
+#### 1. Log Clearing Activity
+- **Event ID 104 (System Log) & Event ID 1102 (Security Log):** There are multiple instances of log clearing activity performed by user `admin_test`. Specifically, the logs for the System, Security, and Windows PowerShell channels were cleared. Clearing logs is a common tactic used by attackers to cover their tracks.
+
+#### 2. Time Change Events
+- **Event ID 4616 (Security Log):** There are time change events logged, which might not be inherently malicious but, in combination with other suspicious activities, could suggest attempts to manipulate forensic investigation timelines.
+
+#### 3. Suspicious Account Activity
+- **Event ID 4720 & 4722:** Account `AtomicUser` was created and then enabled.
+- **Event ID 4726:** The same account `AtomicUser` was deleted shortly after its creation. Frequent and rapid creation/deletion of accounts can be indicative of malicious setup activities to gain temporary access.
+  
+#### 4. Privilege Escalation
+- **Event ID 4672 (Security Log):** Indicates that the user `admin_test` was assigned special privileges, including `SeDebugPrivilege`, which can be dangerously leveraged for malicious purposes such as code injection or process manipulation.
+
+#### 5. Command Execution
+- **Sysmon Event (Process Creation):** There was suspicious use of `cmd.exe` to add and then delete the `AtomicUser` account using `net user` commands. Additionally, the persistence of the `net.exe` and `net1.exe` processes indicates potential misuse to manage user accounts ('AtomicUser') which was then deleted.
+
+#### 6. Use of System Tools
+- **Event ID 1 in the Sysmon logs** shows several executions of system tools like `whoami.exe`, `wevtutil.exe`, and `HOSTNAME.EXE`. While these can be used legitimately, they are also frequently leveraged by attackers in reconnaissance and information gathering within a compromised system.
+
+### Threat Assessment
+
+Based on the occurrence of log clearing, suspicious creation and deletion of user accounts, privilege escalation via assignment of special privileges, and the execution of potentially harmful command-line actions, the logs indeed show signs of potentially **malicious** behavior.
+
+### Resolution
+The finding is concluded as **MALICIOUS** based on the number of alarmingly suspicious activities, particularly the log clearing events, temporary account creation/deletion, and privilege escalation actions. These actions are classic indicators of compromise and warrant immediate investigation.
+
+### Guidance on How to Proceed
+
+1. **Immediate Containment:** Isolate Server002 to prevent further unauthorized access or damage.
+2. **Forensic Analysis:** Conduct a thorough forensic investigation to get to the root cause and origin of the events.
+3. **Audit and Monitor:** Increase audit and logging levels on all similar systems to catch anomalies early. Ensure that log management solutions store logs externally and not locally on the systems themselves.
+4. **Review Access Policies:** Conduct a review of all admin accounts and privilege allocations, ensuring no unauthorized assignments or accounts persist.
+5. **Security Education:** Reeducate users and especially administrative users on secure practices including log handling and the ramifications of unauthorized privilege escalation."
+Overwrite deleted data on C drive,"Upon reviewing the provided Windows event logs, there are multiple indicators that suggest suspicious and potentially malicious activity. Below are the details and observations drawn from the logs:
+
+1. **Event Log Clearing (Security Events 1102, System Events 104):**
+   - The logs indicate that the security logs were cleared by the user ""admin_test"". This action is typically suspicious as malicious actors often clear logs to cover their tracks (for example, EventID 1102 in the Security log; EventIDs 104 in the System log for ""Security"", ""System"", and ""Windows PowerShell"" channels).
+
+2. **Execution of Potentially Dangerous Commands (Sysmon EventID 1):**
+   - The ""wevtutil.exe"" utility was used multiple times to clear logs. This is especially concerning given it was followed closely by the execution of ""cmd.exe"" with the command ""cipher.exe /w:C:"". The ""cipher.exe"" with the ""/w"" option is used to overwrite deleted data to prevent recovery, which might be used to conceal activity.
+   - These activities were performed by the user ""admin_test"", again raising a red flag towards this account being compromised or used by a malicious insider.
+
+3. **Privilege Escalation:**
+   - There's a 4672 event indicating the assignment of special privileges. This includes privileges like SeDebugPrivilege, SeTakeOwnershipPrivilege, SeLoadDriverPrivilege, etc., which are often targeted by attackers for privilege escalation.
+   - The user ""admin_test"" was assigned multiple high-level privileges, which further aligns with potential unlawful elevation of permissions.
+
+4. **Anomalous Process Executions:**
+   - Frequent executions of system utilities under a user context (“admin_test” for instance) that shouldn't typically run such utilities, especially in the sequence seen (e.g., log clearing followed by cipher usage).
+
+5. **Event Log Time Modifications (EventID 4616):**
+   - Events show modifications to the system time, which could be used to manipulate timestamps within event logs to disrupt chronological investigations or to align with attack windows.
+
+Based on these observations, there is a high likelihood of malicious activity, whether external or due to an internal actor abusing elevated permissions. The pattern of log clearing, the subsequent execution of potentially destructive file operations, and attempts to hide tracks are classic indicators of compromise.
+
+**Resolution: MALICIOUS**  
+The evidence points towards a breach where the actor attempts to cover tracks by clearing logs and takes actions aligning with data presence or file destruction tactics. Immediate actions including disabling the compromised accounts, conducting a broader forensic analysis, and monitoring the system for further anomalous activity are recommended. Furthermore, it's advisable to review access policies and user privileges to check for other potential abuses."
+Data Encrypted with GPG4Win,"Upon analyzing the provided Windows event logs, here is a detailed assessment of the situation:
+
+### Summary of Logs:
+- **Application Log**: Not provided
+- **System Log**:
+  - Event logs were cleared from the System and Windows PowerShell log channels by the user `admin_test` on `Server002`.
+  - This activity happened almost simultaneously.
+- **Sysmon Log**:
+  - There are multiple instances of `wevtutil.exe` being executed to clear logs, each time with high integrity level permissions under the user `admin_test`.
+  - A PowerShell command executed reminiscent of post-exploitation activities was observed: PowerShell executing cmd to run Gpg.exe, potentially encrypting a file.
+- **Security Log**:
+  - Event logs were cleared, and this corresponds directly to actions taken by the `admin_test` account.
+  - Multiple logs on user account enumeration from `CompatTelRunner.exe`.
+- **Windows PowerShell Log**:
+  - PowerShell activities also show the execution of command lines closely aligned with encryption operations, using Gpg.exe.
+
+### Indicators of Suspicious/Malicious Activity:
+1. **Log Clearing**: 
+   - Clearing logs is a suspicious activity, often associated with an attempt to cover tracks after potentially malicious actions.
+
+2. **Usage of `wevtutil.exe`**:
+   - The command `wevtutil.exe cl` was executed for multiple logs, confirming that logs were intentionally cleared.
+
+3. **PowerShell Command Execution**:
+   - The presence of a command that uses PowerShell to execute cmd to run Gpg.exe suggests data encryption activities — a behavior often related to ransomware tactics.
+
+4. **Account Enumeration**:
+   - `CompatTelRunner.exe` being used for user and group enumeration may indicate reconnaissance of account statuses, which is suspicious if not expected in routine operations.
+
+### Resolution:
+Given this detailed analysis of suspicious activities, the resolution should be categorized as **MALICIOUS**. The combination of log clearing, unconventional execution of PowerShell commands, and user reconnaissance all flag this activity as an attempt to hide malicious behavior such as data encryption or potential ransomware deployment.
+
+### Guidance:
+1. **Immediate Incident Response**:
+   - Isolate the affected system from the network to prevent further damage or lateral movement.
+   - Preserve evidence by capturing memory and disk images.
+
+2. **Further Investigation**:
+   - Verify the integrity and recent changes to critical files, especially those in `$env:temp` directory.
+   - Check for any signs of data exfiltration or additional unauthorized access.
+
+3. **Review and Strengthen Security Practices**:
+   - Implement stricter log access monitoring, ensuring tamper-evident logs are maintained.
+   - Review the privileges of user accounts, limiting administrative access to necessary roles only.
+   - Consider deploying enhanced EDR solutions for real-time threat detection and response."
+ESXi - Terminates VMs using pkill,"**Analysis of Provided Windows Event Logs:**
+
+1. **Log File Clearing:**
+   - **Event ID 104 (System Log), Event ID 1102 (Security Log):** These events indicate that both the System and Security logs have been cleared by a user known as `admin_test`. Log clearing actions, especially involving security logs, are considered suspicious because attackers often perform this action to cover their tracks.
+
+2. **Process Execution:**
+   - **wevtutil.exe Usage:** The Sysmon logs show multiple instances where `wevtutil.exe` was executed to clear logs. This utility is normally used for extracting and clearing event logs. The repeated use of `wevtutil.exe` for clearing various logs within a short span is highly suspicious and aligns with typical behavior to conceal nefarious activities.
+   - **Atomic Red Team Simulations:** The execution of `cmd.exe` with arguments pointing to potential `AtomicRedTeam` simulations (use of `plink.exe` and specific paths) suggests the potential testing of Red Team exercises. While Atomic Red Team is a legitimate security testing tool, this could indicate either legitimate security testing or an unauthorized simulation exercise.
+   - **High Integrity Level Processes:** Many processes executed with a high integrity level, which implies privileged operations, including potential misuse of administrative privileges.
+
+3. **Suspicious Programs:**
+   - **plink.exe Execution:** Found in the command line for `cmd.exe`, refers to `plink.exe` which is part of PuTTY, commonly used for creating SSH connections. The presence of SSH commands and weak authentication details (e.g., `-pw ""pass""`) indicate a potential security risk.
+
+4. **Edge Update Processes:**
+   - The execution of Microsoft Edge Update processes and related components appears consistent with legitimate update operations, as they are executed under `NT AUTHORITY\SYSTEM`. However, these activities should be reviewed in the context of the organization’s software update policies to ensure they are authorized changes.
+
+5. **Potential Network Connections:**
+   - Network connections related to the SSH command associated with `plink.exe` are a concern given the weak authentication methods observed in command lines.
+
+**Assessment and Resolution:**
+
+Based on the analysis, the logs demonstrate activities often associated with malicious behavior:
+- The clearing of security and system logs is a strong indicator of malicious intent.
+- The use of potentially insecure remote access commands (`plink.exe`) could be a compromise vector if unauthorized.
+- The high integrity level of logged processes raises the potential for privilege escalation or misuse of administrative rights.
+
+**Resolution: MALICIOUS - The logs demonstrate clear indicators of malicious activity including log file clearing and potential unauthorized network activities.**
+
+**Guidance on How to Proceed:**
+1. **Immediate Incident Response:**
+   - Isolate the affected host (`Server002`) to prevent further unauthorized activities.
+   - Conduct a comprehensive forensic analysis to identify the origin and impact of the log clearing and remote connections.
+
+2. **Review and Strengthen Security Controls:**
+   - Implement strict auditing and alerting on log clearing activities.
+   - Review user accounts and privileges, ensuring `admin_test` has necessary permissions only.
+
+3. **Evaluate Network Security:**
+   - Monitor and restrict SSH access and review network logs for unauthorized connections.
+   - Revise firewall settings and network segmentation to reduce exposure to external threats.
+
+4. **Review Security Tools Usage:**
+   - Ensure that tools like `AtomicRedTeam` are used under controlled and approved conditions.
+
+5. **Educate and Train Staff:**
+   - Provide security awareness training to prevent inadvertent misuse of administrative tools and credentials."
+Windows - vssadmin Resize Shadowstorage Volume,"Based on the provided logs from the Windows machine, there are several indicators of potentially suspicious and likely malicious activities:
+
+1. **Event Log Clearing**:
+   - The Security Log (Event 1102) and the System/Windows PowerShell logs (Event 104) show the clearing of event logs by the user `admin_test`. This is a typical sign of malicious activity as adversaries often clear logs to avoid detection.
+
+2. **Time Change Events**:
+   - The Kernel-General (Event 4616) in the Security log shows multiple adjustments of system time. Changing system time can potentially be an attempt to manipulate time-based security logs or system behaviors.
+
+3. **Suspicious Processes**:
+   - The Sysmon log shows the execution of PowerShell with a command to resize shadow storage (`vssadmin resize shadowstorage`). This is a common command used in ransomware and other malicious activities to suppress volume shadow copies to prevent data recovery.
+
+4. **High Privilege Operations**:
+   - The Event 4672 on Security log indicates that `SYSTEM` was granted a list of high-privilege tokens, typically necessary for sensitive actions on the system.
+   - Logon and privilege assignments to tokens indicative of unauthorized or suspicious escalation.
+
+5. **Unusual Command-Line Activity**:
+   - Various Sysmon events log unusual command-line executions including `wevtutil` and `conhost` which have been parented by processes like PowerShell and `whoami`, often related to scripted activities for system reconnaissance or malicious script execution via scheduled tasks or remote commands.
+
+6. **Volume Shadow Copy and Service Execution**:
+   - The execution of `vssadmin.exe` and `VSSVC.exe` indicates potential tampering with shadow copies which can point to data destruction or ransomware activity.
+
+**Assessment**:
+- The activities observed through these logs show deliberate actions to conceal malicious activities, manipulate system logs and settings, and potentially execute harmful commands consistent with malware behaviors.
+
+**Resolution**:
+- **MALICIOUS**: The logs contain definite indicators of malicious activity including event log clearing, system time manipulation, execution of potentially harmful commands, and unauthorized use of administrative privileges.
+
+**Guidance**:
+1. Immediately isolate the affected machine from the network to prevent further escalation.
+2. Conduct a thorough investigation of the machine's file system and memory for indicators of compromise, particularly focusing on persistence mechanisms and potential payloads.
+3. Review user activity audit trails to identify unauthorized access patterns and check for any lateral movement indicators.
+4. Initiate the incident response process, including notifying the respective parties and conducting forensic analysis.
+5. Reinforce logging and monitoring configurations to ensure future activities are captured accurately and deemed suspicious immediately upon occurrence."
+Windows - Disable Windows Recovery Console Repair,"After analyzing the provided Windows event logs, I have identified several points of interest that may indicate suspicious or malicious activity:
+
+1. **Security Log (EventID 1102: Log File Cleared)**:
+   - The presence of a Security log with EventID 1102 indicates that the security event logs have been cleared by the user `admin_test`. Clearing logs is typically a malicious action to cover tracks, and it’s highly suspicious in a security context. 
+
+2. **Sysmon Logs**:
+   - Sysmon logs show the execution of multiple processes with administrative privileges by the user `admin_test`. Of particular interest is the execution of `cmd.exe` with a command line involving `bcdedit.exe` to modify boot and recovery policies. The command executed is:
+     ```
+     ""cmd.exe"" /c bcdedit.exe /set {default} bootstatuspolicy ignoreallfailures & bcdedit.exe /set {default} recoveryenabled no
+     ```
+   - This action disables error recovery and ignores all failures during boot, which is not typical for legitimate administrative actions unless trying to suppress failure notifications or prevent recovery options from appearing during boot—both of which can be part of a malicious actor’s attempt to ensure a compromised state persists or goes unnoticed.
+
+3. **System and Application Logs**:
+   - Logs also indicate the clearing of system logs (EventID 104) by `admin_test`, which aligns with the behavior of log clearing in the Security log and further indicates attempts to cover tracks by the same user.
+
+### Assessment
+The combination of log clearance actions and execution of commands to alter critical Windows boot configuration settings under high integrity levels strongly indicates potentially malicious behavior. Given the context and the nature of changes being made to the system configuration, log tampering, and covering tracks, this scenario aligns closely with common tactics used in system compromise scenarios.
+
+### Resolution
+- **Resolution**: MALICIOUS
+- **Assessment**: The actions recorded in these logs are consistent with malicious activity, including tampering with system configuration to suppress errors and interference in log management to hide evidence of activity.
+
+### Guidance on How to Proceed
+1. **Immediate Response**:
+   - Disconnect the affected host (`Server002`) from the network to prevent any further potentially harmful actions or data exfiltration.
+
+2. **Investigation**:
+   - Conduct a thorough investigation into user `admin_test`'s activities, including reviewing any retained logs, network traffic, and file modifications during the time of interest.
+   
+3. **Containment and Eradication**:
+   - Examine and back up all potentially impacted systems before conducting further remediation to ensure evidence preservation.
+   - Review and reset all potentially compromised credentials.
+   - Restore system settings relevant to system integrity and recovery options as necessary.
+
+4. **Recovery**:
+   - Reassess and reimplement appropriate security controls and make any necessary infrastructure improvements to prevent future incidents of this nature.
+
+5. **Reporting and Follow-up**:
+   - Report the incident to relevant internal teams and possibly external partners if data breaches are suspected.
+   - Conduct a post-incident review to understand the root cause and improve incident response processes.
+
+These actions will help to manage the immediate threat, understand the scope of any compromise, and strengthen future security posture."
+Configure LegalNoticeCaption and LegalNoticeText registry keys to display ransom message,"Based on the provided logs, there are several indicators of potentially malicious activity on the system. Here is a detailed analysis:
+
+### Analysis:
+
+1. **Log Clearing Events:**
+   - **Security Log Cleared:** The Event ID 1102 in the Security log indicates that the security log has been cleared by the user `admin_test`. Clearing logs is often an indicator of an attempt to cover tracks, a common action after malicious activities.
+   - **System Log Cleared:** Similarly, Event ID 104 in the System log indicates the system log was cleared. The action was performed by `admin_test`, suggesting an attempt to conceal activities.
+
+2. **Privilege Escalation:**
+   - Event ID 4672 indicates special privileges were assigned to `admin_test`, such as `SeDebugPrivilege` and others, which could have been used for malicious purposes.
+
+3. **Suspicious PowerShell Activity:**
+   - A PowerShell command was executed that appears to modify the Legal Notice text on the system to display a ransom note. This modification is indicative of ransomware behavior, specifically referencing ""PYSA"" and instructing the user to contact a specific email. Such automated ransom note modifications are characteristic of ransomware infections.
+
+4. **Process Execution:**
+   - The execution of `wevtutil.exe` with commands like `cl Application` which stands for clearing application logs is evident in the Sysmon logs. This complements the log clearance seen in the System and Security event logs. These actions are indicative of an attempt to hide malicious actions on the system.
+
+5. **Network Activity:**
+   - The `LogonType` 3 in Event ID 4624 indicates a network logon, possibly representing the method how access was gained.
+
+### Assessment:
+
+The combination of log clearing events, privilege escalation, suspicious PowerShell script execution, and indications of ransomware-like activity points towards malicious behavior. The activities align with a potential compromise involving ransomware deployment or manual attack with post-exploitation cleanup.
+
+### Resolution:
+
+- **MALICIOUS:** The analysis conclusively indicates malicious activity with the execution of commands that align with ransomware deployment methodologies and attempts to hide the perpetrator's actions by clearing logs.
+
+### Guidance:
+
+1. **Immediate Response:**
+   - Isolate the affected machine from the network to prevent further spread of possible ransomware.
+   - Initiate incident response procedures to investigate the full extent of the compromise.
+
+2. **Forensic Analysis:**
+   - Collect volatile data and disk images for further analysis.
+   - Analyze other systems on the network to determine the spread and impact.
+
+3. **Recovery:**
+   - Restore the system from known good backups if available, ensuring they are clean before restoration.
+   - Change credentials and audit access logs to prevent similar breaches.
+
+4. **Preventive Measures:**
+   - Enhance monitoring of PowerShell use and log clearing commands across the network.
+   - Implement stricter access controls and privilege management to reduce the capability of an attacker gaining necessary permissions. 
+
+This incident indicates a severe compromise requiring urgent attention and a comprehensive review of security posture and incident response readiness."
+Akira Ransomware drop Files with .akira Extension and Ransomnote,"Based on the provided logs, a detailed analysis reveals the following suspicious and potentially malicious activities:
+
+1. **Clearing of Event Logs**:
+   - The system and Windows PowerShell logs were cleared by the user ""admin_test"" (as indicated by Event ID 104 in the System log) and by the same user in the Security log with Event ID 1102. Clearing of event logs is a known technique often used by attackers to cover their tracks after conducting malicious activities. This is a significant red flag.
+
+2. **PowerShell Activity**:
+   - There is a notable PowerShell command execution (captured in the Sysmon and Windows PowerShell logs) that writes a ransom note to the victim's desktop (`akira_readme.txt`) with detailed instructions. This activity strongly indicates ransomware behavior with possible involvement of ""Akira"" ransomware based on the logs.
+
+3. **Unusual Use of `wevtutil`**:
+   - The `wevtutil` command was used multiple times to clear logs across different types, including `Sysmon`, `Application`, `System`, and `Security`. This correlates with the logs being cleared, which further supports attempts to hide malicious activities.
+
+4. **Suspicious Powershell Script**:
+   - A PowerShell script is creating a substantial number of random files and a detailed ransom note. The content and behavior of this PowerShell command strongly point to malicious intent, specifically ransomware-like activity.
+
+5. **Privilege Escalation**:
+   - The session involves elevated privileges with the presence of multiple significant privileges (SeDebugPrivilege, SeBackupPrivilege, etc.) as seen in Event ID 4672 in the Security log, indicating potential privilege escalation or misuse.
+
+6. **Potential Data Exfiltration and Ransom Note Details**:
+   - The ransom note also mentions data exfiltration, which is a significant indicator of a data breach with potential data theft prior to encryption.
+
+**Conclusion**:
+The activities recorded in the logs present strong evidence of malicious activity, likely involving ransomware. The presence of log clearing, execution of potentially malicious PowerShell scripts, and the creation of ransom notes all point toward a compromise.
+
+**Resolution**: MALICIOUS
+
+**Guidance**:
+
+- **Immediate Response**: Disconnect impacted systems from the network to prevent further data encryption or exfiltration.
+- **Threat Containment**: Identify and isolate all affected systems and attempts for propagation.
+- **Data Recovery**: Utilize backups if available to restore data. Avoid paying ransom as it does not guarantee recovery and encourages further attacks.
+- **Incident Reporting**: Report this breach to the necessary authorities and compliance bodies as required.
+- **Forensic Analysis**: Engage cybersecurity experts for a detailed investigation and assessment of the damage.
+- **Enhanced Monitoring**: Implement enhanced monitoring and logging mechanisms post-incident to prevent future occurrences.
+"
+Data Encrypt Using DiskCryptor,"### Analysis of Event Logs
+
+**1. Log Clearing Activity:**
+   - **Security Log Cleared:**
+     - EventID: 1102 on the Security log indicates that the security log was cleared. The user `admin_test` was responsible for this action.
+     - The log clearing event is often considered suspicious as it might be used to hide malicious activities.
+
+   - **System Log Cleared:**
+     - EventID: 104 on the System log where `admin_test` cleared the System log.
+     - Similar to the clearing of security logs, clearing system logs can also be a method to hide traces.
+
+   - **Windows PowerShell Log Cleared:**
+     - Another EventID: 104 entry on the System log shows clearing of the Windows PowerShell log by the user `admin_test`.
+
+**2. Command-Line Activity:**
+   - **Use of PowerShell:**
+     - Execution of `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe` by `admin_test`. This could be benign but requires additional context to determine if it’s part of regular administrative tasks.
+   
+   - **suspicious Command:**
+     - Command `\""C:\\Windows\\system32\\wevtutil.exe\"" cl` is executed several times across different logs (`Microsoft-Windows-Sysmon/Operational`), targeting different logs such as Application, Security, and System. This activity can indicate an attempt to clear the logs and cover tracks.
+
+**3. Process Executions:**
+   - **Execution of Programs with Possible Malicious Intent:**
+     - `cmd.exe` executed with a command referencing a path `\""%%PROGRAMFILES%%\\dcrypt\""\\dcrypt.exe\""`. This specific path and program execution could be indicative of malicious software. Especially programs residing in unexpected directories and using command shell commands which are often leveraged for malicious activities.
+
+**4. Edge Update and Installation:**
+   - Multiple system-level installers were executed, likely related to legitimate Microsoft Edge updates. The presence of setup.exe and similar processes is typical as long as they are installed by known sources.
+
+**Verdict: MALICIOUS**
+
+### Assessment:
+The logs indicate potential malicious activity. The act of clearing logs is especially concerning and is a common technique used by attackers to remove traces of unauthorized access. The execution of potentially malicious commands and unusual processes adds to the suspicion of compromise.
+
+### Recommendation:
+1. **Immediate Incident Response:**
+   - Isolate the affected system to prevent further breach or lateral movement within the network.
+   - Conduct a comprehensive forensic analysis to understand the depth of potential compromise.
+   
+2. **Review User Activity:**
+   - Review other activities performed by the user `admin_test` for additional suspicious behavior.
+
+3. **Enhance Monitoring:**
+   - Implement enhanced monitoring and alerting for log deletion and execution of administrative tools with suspicious command lines.
+   
+4. **Patch and Update:**
+   - Ensure all systems are fully patched and up-to-date to minimize vulnerabilities that could be exploited.
+   
+5. **Education and Training:**
+   - Train users and administrators on security best practices, including identifying phishing attempts and secure use of administrative tools.
+
+By adopting these measures, the risk associated with the identified malicious activities can be mitigated and the organization’s security posture improved."
+Windows - wbadmin Delete Windows Backup Catalog,"The provided logs from the Windows host reveal several indicators of potentially malicious activity. Here's a detailed analysis of the logs:
+
+1. **Log Clearing Activity:**
+   - **Security Log Clearing (Event ID 1102):** The security event log was cleared by the user `admin_test` just before a flurry of backup-related events and process executions. Log clearing is a behavior often associated with attempts to conceal malicious activity.
+
+2. **Suspicious Process Execution:**
+   - **Process Execution with `wevtutil.exe`:** Indicative of a command used to clear event logs. The command-line logged (`wevtutil.exe cl`) is commonly associated with attempts to remove traces of actions from the event logs.
+   - **Command Execution with `wbadmin.exe`:** The execution of `cmd.exe` with the command `wbadmin delete catalog -quiet` is suspicious as it silently deletes backup catalogs, potentially erasing data that could be used for recovery or investigation.
+
+3. **Logon Events and Privilege Escalation:**
+   - Multiple successful logons by `SYSTEM` with Event ID 4624 highlight standard activities, but given the context of log clearing and command executions, they warrant further attention to confirm the legitimacy of the activity.
+
+4. **Edge Update Activity:**
+   - While Microsoft Edge Update activities are typically benign, the timing coinciding with the above suspicious activities suggests it could be used as a distraction or an attempt to mask the primary activity. Further investigation of these processes is recommended to ensure they are legitimate.
+
+5. **Lack of Attempts to Alter System or PowerShell Logs:**
+   - Neither the System nor Windows PowerShell logs show any events indicating tampering, although the PowerShell log appears devoid of data which raises suspicion about the current state of PowerShell logging on this host.
+
+### Assessment:
+Given the log clearing followed by attempts to delete backup catalogs without logging output and interacting with event logs using `wevtutil`, the activities observed are highly suspicious and suggest potentially nefarious intent, likely aiming to evade detection by erasing logs and backups.
+
+### Resolution: SUSPICIOUS
+- Immediate further investigation is needed to identify who executed these commands and for what purpose.
+- Review system access logs and correlate them with user activity to identify any unauthorized access.
+- Implement stricter monitoring and alerting for such log clearing and backup manipulation activities on Windows hosts.
+- Preserve the current logs and consider utilizing forensic methods to retrieve cleared logs.
+
+### Guidance:
+- Check for any other recent authentications or access to the system that might have been unauthorized.
+- Engage with incident response to ensure the integrity of the system and preserve forensic evidence.
+- Consider a system review to ensure no backdoors or further compromises remain on the system."
+Windows - Delete Volume Shadow Copies via WMI with PowerShell,"Based on an analysis of the provided Windows event logs, there are several indicators that suggest activity potentially associated with malicious intent:
+
+1. **PowerShell Activity**: The logs indicate the execution of a PowerShell command that interfaces with shadow copies:
+   - The command `powershell.exe & {Get-WmiObject Win32_Shadowcopy | ForEach-Object {$_.Delete();}}` suggests the deletion of shadow copies, which is a technique often associated with ransomware and other malware to prevent file recovery by removing system backup shadows.
+
+2. **Log File Clearing**: Several logs show evidence of log files being cleared using `wevtutil.exe`, including security, system, and PowerShell logs:
+   - Clearing event logs is a tactic used by attackers to cover their tracks and can indicate malicious activity.
+
+3. **Security Privileges**: There are events where the `admin_test` user account was granted high-level privileges (`SeSecurityPrivilege, SeBackupPrivilege, SeRestorePrivilege, SeTakeOwnershipPrivilege, SeDebugPrivilege` etc.), and multiple logons/logoffs in rapid succession could indicate suspicious activity:
+   - These privilege levels are more than typical operational requirements for many administrative tasks and could indicate attempts to perform actions needing elevated privileges.
+
+4. **Time Manipulation**: System time changes logged are often used to disrupt logging or timestamp consistency, which may suggest tampering.
+
+5. **Suspicious Process Executions**: Multiple invocations of system utilities like `wevtutil.exe` (for cleaning logs) and network-related utilities could indicate attempts to manipulate logs and settings covertly.
+
+Based on these observations, the logs indicate a combination of actions that align with steps typically associated with a system compromise, such as lateral movement, data hiding (log clearing), and possible ransomware activity (shadow copy deletion).
+
+**Resolution**: MALICIOUS
+
+**Guidance on How to Proceed**:
+- Immediately isolate the affected host (Server002) to prevent further potential spread or damage within the network.
+- Conduct a comprehensive forensic analysis of the machine to identify the full extent of the compromise.
+- Check for any unusual outbound communications that might suggest data exfiltration.
+- Review access logs and credentials to ensure there are no unauthorized or compromised accounts.
+- Restore the system from a known good backup, ensuring the backup does not have traces of the compromise.
+- Consider updating all systems and security protocols to prevent future incidents, and educate users about safe practices.
+- Report the incident to appropriate internal and possibly external entities if sensitive information might have been exposed."
+Windows - Stop service by killing process,"Upon reviewing the provided Windows event logs, we can identify several noteworthy activities that suggest suspicious behavior, possibly indicating undesired or malicious activities on the host ""Server002.""
+
+### Analysis:
+
+1. **Log Clearing Activity**:
+   - Multiple events indicating log file clearing are observed (EventID 104 in System and EventID 1102 in Security). These logs state that the System, Windows PowerShell, and Security logs were cleared by a user account named ""admin_test"".
+   - **EventID 104** for `System` and `Windows PowerShell` logs cleared by ""admin_test"".
+   - **EventID 1102** for `Security` log cleared by ""admin_test"".
+   - This activity is suspicious as clearing logs can be an indication of an attempt to remove traces of malicious actions or unauthorized access.
+
+2. **Unusual Command Execution**:
+   - **Sysmon EventID 1** indicates the execution of commands using `cmd.exe`:
+     - ""cmd.exe"" executed with ""/c taskkill.exe /f /im spoolsv.exe"" to forcefully terminate the Print Spooler service (spoolsv.exe). This may disrupt printing services, but it can also be used to exploit certain vulnerabilities or to evade detection.
+   
+3. **Service Stop Events**:
+   - Multiple instances of `edgeupdate` service stop events are noted in the application logs. While Edge updates can be legitimate, seeing these alongside log clearance and Print Spooler interaction adds to the suspicious context.
+
+4. **Process Execution with High Integrity Level**:
+   - Processes such as `wevtutil.exe` and `whoami.exe` are being executed frequently, originating from user paths associated with ""admin_test"" and doing so with high integrity, suggesting privilege use indicative of admin-level context.
+  
+5. **Service-Related Activities**:
+   - **EventID 7031** in the System log indicates that the Print Spooler service terminated unexpectedly and was set to restart. The Print Spooler service is often targeted for exploitation, making this noteworthy.
+
+6. **Execution of Built-in Utilities**:
+    - Frequent use of `wevtutil.exe` (event utility tool for managing event logs) indicates attempts to manage or alter event logs, which aligns with the log cleansing observed.
+    - Execution of `whoami.exe` to gather information on logged-in users, which by itself is not suspicious but in conjunction can be considered probing activity.
+
+### Conclusion:
+
+The combination of log clearing, unusual command executions, and suspicious process activities, particularly involving the Print Spooler and event log management utilities, suggest potentially malicious behavior. 
+
+### Resolution: SUSPICIOUS
+
+The activities detected in the logs do not explicitly confirm malicious intent beyond doubt but certainly raise enough concern to merit further investigation. It's crucial to:
+- Conduct a thorough review of the actions performed by the user ""admin_test"".
+- Inspect systems for unauthorized changes or additional signs of compromise.
+- Verify the integrity of critical system files and services.
+- Address any configuration loopholes or vulnerabilities, especially regarding the Print Spooler service and administrative privileges.
+
+**Action Plan**:
+- Conduct comprehensive antivirus and anti-malware scans.
+- Review user activities and credentials for admin_test.
+- Harden system configurations, especially around user permissions and service management."
+Windows - Stop service using Service Controller,"Based on the analysis of the provided Windows event logs, the following observations can be made:
+
+1. **Event Log Clearing:**
+   - There are multiple instances of event logs being cleared (Event ID 1102 in the Security log and Event ID 104 in the System log). 
+   - These actions are performed by the user ""admin_test"" on ""Server002,"" which is typically a red flag as clearing logs is a known tactic used by attackers to cover their tracks.
+
+2. **Process Execution:**
+   - The `wevtutil.exe` tool, which is designed for managing Windows Event logs, is used extensively in these events. This tool is called to clear various logs, such as Security, Application, System, and Windows PowerShell logs.
+   - The clearing of logs by `wevtutil.exe` is executed with high integrity, suggesting that it was carried out with administrative privileges by ""admin_test.""
+
+3. **System and Security Time Change:**
+   - There are changes to the system time, as indicated by Event ID 4616. Although time changes can occur through legitimate processes, they can also be used by attackers to manipulate timestamps and avoid detection.
+
+4. **Command Execution:**
+   - The use of `cmd.exe` with the command `sc.exe stop spooler` shows that the Print Spooler service was stopped. This action can be part of a method to exploit vulnerabilities in the Print Spooler service or disrupt the system.
+
+5. **Normal Service Executions:**
+   - There are multiple occurrences of processes related to Microsoft Edge updates, Microsoft's legitimate processes, running under `NT AUTHORITY\SYSTEM`. These actions appear normal for a system performing regular updates.
+
+### Assessment:
+Based on the logs, there is substantial evidence pointing towards intentional log clearance activities and potential misuse of administrative capabilities by a user on the targeted host. Clearing event logs and manipulating system times are significant indicators of malicious intent to cover unauthorized actions.
+
+### Resolution:
+- **Resolution: MALICIOUS**
+
+### Guidance:
+1. **Immediate Actions:**
+   - Begin a thorough investigation into the account ""admin_test"" to determine if the account has been compromised or if an insider threat is involved.
+   - Perform a comprehensive security audit of ""Server002"" to identify any further signs of compromise or unauthorized changes.
+   
+2. **Further Investigation:**
+   - Review additional logs and backups, if available, prior to the logs being cleared to find any traces of what activities might have been covered up.
+   - Conduct a network-wide search to detect if similar incidents are occurring on other systems.
+
+3. **Strengthen Security Controls:**
+   - Implement monitoring to detect and alert on log clearance activities or system time changes immediately.
+   - Consider restricting unnecessary administrative access and employing supported auditing practices to avoid misuse.
+
+4. **Incident Reporting:**
+   - Report this incident to relevant internal authorities and, if necessary, law enforcement for further investigation and potential legal action."
+Windows - Delete Backup Files,"After analyzing the provided Windows event logs, several suspicious activities have been identified which suggest potential malicious activity. Here is a detailed analysis:
+
+### Observations:
+
+1. **Log File Clearing**: 
+   - Multiple events show the clearing of logs by the user 'admin_test'. Specifically, the logs in the 'System', 'Windows PowerShell', and 'Security' channels have been cleared (`EventID: 104` and `EventID: 1102`). Log clearing is a common tactic used by attackers to cover tracks.
+
+2. **Unusual Command Execution**:
+   - The Sysmon logs reveal the execution of `wevtutil.exe`, a utility for managing event logs, to clear logs from different channels including 'Sysmon/Operational', 'Application', 'System', 'Security', and 'Windows PowerShell'. The command `wevtutil.exe cl <channel>` is observed repeatedly, which is highly suspicious as it indicates an attempt to erase evidence of activities.
+   
+3. **Suspicious Process Creation**:
+   - The execution of `cmd.exe` with the command to delete backup files and sensitive extensions like `.VHD`, `.BAC`, `.BAK`, etc., is typically used in destructive attacks like data wiping or ransomware.
+
+4. **High Privilege Processes**:
+   - Several processes are running at a high integrity level. Notably, `cmd.exe` running with a potential malicious command suggests it was likely executed with elevated privileges.
+   - Elevation of privileges for the 'admin_test' account is also captured (`EventID: 4672`).
+
+5. **Network Logins**:
+   - There are records of network logins from an external IP address (192.168.0.102), which might not be typical for this server especially under accounts with admin privileges.
+
+### Assessment:
+
+- The combination of event log clearing, attempts to erase backup and sensitive files, and the presence of high privilege service executions strongly point towards potential malicious activity aimed at both covering tracks and possibly conducting destructive actions.
+
+### Conclusion:
+
+**Resolution: MALICIOUS**
+
+The activities observed in the logs are indicative of an active attempt to compromise, maintain persistence, and potentially sabotage the system, fitting the profile of malicious activity. This necessitates immediate further investigation and potential incident response actions.
+
+### Recommendations:
+
+1. **Immediate Incident Response**: Initiate containment, eradication, and recovery procedures as per the organization's Incident Response Plan.
+2. **Network Segmentation**: Disconnect the affected host from the network to prevent lateral movement.
+3. **Review and Secure Credentials**: Change credentials for affected accounts, especially those with administrative access.
+4. **Conduct Threat Hunting**: Investigate for indicators of compromise across other systems to identify lateral movement or other affected hosts.
+5. **Forensic Investigation**: Collect disk images and memory snapshots for forensic analysis to understand the entry vector and full scope of the compromise.
+6. **Audit and Harden**: Review security configurations and deploy further hardening measures to prevent future incidents."
+Azure AD - Delete user via Azure CLI,"Upon analyzing the provided Windows event logs, several indicators point to potential malicious activity:
+
+### Findings:
+
+1. **PowerShell Activity:**
+   - Multiple events attributed to PowerShell demonstrate an attempt to execute a script that logs into Azure and deletes a user account. The `HostApplication` details for these entries are:
+     ```
+     powershell.exe & {az login
+     $userprincipalname = ""atomicredteam@yourdomain.com""
+     az ad user delete --id $userprincipalname}
+     ```
+   - This command is suspicious as it involves the automated deletion of a user account without context, suggesting potential unauthorized access or account takeover.
+
+2. **Event Log Cleared:**
+   - Security logs recorded an Event ID 1102, indicating that the event logs were cleared by the user `admin_test`. Clearing logs is typically an attempt to cover tracks following suspicious or malicious activity.
+
+3. **Sysmon Logs:**
+   - There is evidence of `wevtutil.exe` being used multiple times to clear the operational logs (e.g., Microsoft-Windows-Sysmon/Operational, Application, Security, System logs). This behavior aligns with attempts to hide traces of malicious activities.
+   - The command lines related to `wevtutil.exe` were executed by the same user `admin_test`, further associating this account with the activity.
+
+4. **User Privilege and Actions:**
+   - Logs show a consistent pattern of using the `admin_test` account, operating with a high integrity level and executing commands that typically require administrative privileges.
+
+5. **Security Events:**
+   - There are several Windows Security events (Event ID 4672) indicating that high-level privileges were granted to the `SYSTEM` account. While this can occur under normal operations, combined with other suspicious activities, this may suggest a privilege escalation attempt for unauthorized purposes.
+
+### Threat Assessment:
+The presence of scripted account deletions using PowerShell, coupled with log clearing activity and the use of administrative privileges, provides significant indicators of compromise. The intent seems to be unauthorized modification within Azure and potential cleanup to avoid detection.
+
+### Conclusion:
+- **Resolution:** MALICIOUS
+
+### Recommendations:
+1. **Immediate Response:**
+   - Disconnect the affected host from the network to prevent further actions.
+   - Change credentials for `admin_test` and any potentially compromised accounts, including privileged users within Azure.
+   - Initiate incident response procedures to investigate the scope of the breach.
+
+2. **Further Investigation:**
+   - Review Azure access logs for any other anomalies or unauthorized actions.
+   - Analyze other hosts in the network for similar suspicious indicators or PowerShell scripts.
+
+3. **Preventive Measures:**
+   - Implement enhanced logging and monitoring of PowerShell activities.
+   - Utilize Just-In-Time (JIT) access control for sensitive operations.
+   - Regularly back up event logs and secure them from unauthorized access."
+Windows - wbadmin Delete systemstatebackup,"**Analysis of Logs:**
+
+1. **Event Log Clearing:**
+   - Security Event ID 1102 (Log file cleared) shows the logs were cleared by `admin_test`. This action is often associated with malicious activity as attackers may clear logs to cover their tracks.
+   - System Event ID 104 indicates the System and Windows PowerShell logs were also cleared by the same user `admin_test`.
+
+2. **Suspicious Commands and Actions:**
+   - Sysmon logs show the use of `wevtutil.exe` to clear event logs (Event ID 1 with command `""C:\\Windows\\system32\\wevtutil.exe"" cl Microsoft-Windows-Sysmon/Operational`). This is suspicious as `wevtutil.exe` is a legitimate tool used to manage Windows event logs and is often used by attackers to clear logs without raising alarms from standard security monitoring.
+   - `cmd.exe` executing the command `wbadmin delete systemstatebackup -keepVersions:0` (Event ID 1 with CommandLine `""/c wbadmin delete systemstatebackup -keepVersions:0""`) indicates the deletion of system state backups, a potential sign of malicious intent to prevent system recovery.
+
+3. **Time Change Events:**
+   - There are Kernel General and Time-Service events showing a time change, which can be suspicious if it occurs unexpectedly. Time changes can be used by attackers to manipulate timestamps and confuse temporal analyses of logs.
+   - Security Event ID 4616 indicates time change, potentially reflecting an attempt to obfuscate operations by changing timestamps.
+
+4. **High Integrity and Privileged Activities:**
+   - Numerous processes executed under high integrity levels with elevated privileges by the user `admin_test`, as shown in various Event ID 1 sysmon logs. This could indicate privilege escalation activities or the execution of sensitive operations potentially linked to unauthorized access.
+
+5. **Microsoft Edge Updates and Temporary Files Execution:**
+   - Several suspicious executions of Microsoft Edge Update binaries from temporary directories (Sysmon Event ID 1). Temporary directory execution can sometimes signify the use of a legitimate application's update mechanism in unwanted ways. However, without further information on whether the updates are legitimate or verified, this remains speculative.
+
+6. **Miscellaneous Observations:**
+   - The observed pattern of high-privilege operations, such as system state backup deletions, log clearances, and time changes, against the user `admin_test` (as evidenced by multiple events) suggests anchor points for further forensic investigation.
+
+**Assessment & Recommendation:**
+
+Based on the above analysis, the logs contain multiple signs of potentially malicious activity. Key indicators such as clearing of event logs, deletion of system backups, and usage of elevated privileges suggest that the logs have substantial evidence of suspicious activity that merits further internal investigation.
+
+- **Resolution:** SUSPICIOUS
+
+**Guidance on How to Proceed:**
+
+1. **Immediate Isolation:** Consider isolating the affected machine from the network to prevent further potential harm or data exfiltration.
+2. **Forensic Investigation:** Conduct a detailed forensic analysis on the employed commands (e.g., `wevtutil`, `cmd`, `wbadmin`) and processes to uncover unauthorized or malicious activities.
+3. **User and Permission Review:** Review and analyze permissions and actions undertaken by the user account `admin_test` during the event period.
+4. **Backup Verification:** Validate the integrity and availability of system state and data backups.
+5. **Security Controls Review:** Investigate the effectiveness of current security monitoring and detection systems, especially around alerting mechanisms for event log modifications and critical system command executions.
+6. **Time Synchronization Checks:** Ensure time settings are accurate across systems to prevent manipulation by hostile entities."
+Change User Password - Windows,"Upon analyzing the provided Windows event logs, I'm able to identify the following suspicious activities:
+
+1. **Log File Clearing Events**:
+   - There are multiple log clearing events (EventID 104 in the System logs and EventID 1102 in the Security logs) for ""System"" and ""Windows PowerShell"" channels, executed by a user account named ""admin_test"". Log clearing without a legitimate reason is often seen as an action taken to cover tracks after malicious activity.
+
+2. **User Account and Privilege Modifications**:
+   - The events indicate the creation and modification of a user account named ""AtomicAdministrator"" (EventID 4720) with user accounts being enabled (EventID 4722), modified (EventID 4738), and potentially having password changes (EventID 4724). These activities were conducted by ""admin_test"" and suggest privilege escalation or unauthorized account creation.
+
+3. **Suspicious Command-Line Activity**:
+   - The execution of several command-line utilities with elevated privileges, especially `wevtutil.exe` to clear event logs (captured in Sysmon logs with ProcessID of `2980`, `1444`, and others) indicates potential malicious behavior meant to hinder monitoring and investigation.
+
+4. **Usage of Commands like `net.exe` and `net1.exe`**:
+   - There are logs showing the execution of commands related to managing user accounts (`net user`) that add the user 'AtomicAdministrator' and change its password, implying potential unauthorized attempts to create backdoor access.
+
+5. **Outdated or Unauthorized Software Updates**:
+   - Series of activities around the Microsoft Edge Update, which could be benign, but if unauthorized, they can be used as disguised methods to run or inject malicious code.
+
+### Assessment:
+Given the activities observed in the logs, notably log clearing, unauthorized user account modifications, and usage of command-line tools to manipulate user accounts, it strongly suggests malicious activity aimed at gaining and maintaining unauthorized access.
+
+### Resolution:
+- **MALICIOUS** - The patterns of user and log manipulation are typical indicators of an attempt to compromise a system. Immediate actions should be taken to investigate the extent of access gained, revoke unauthorized user access, and assess additional risks posed to the network and systems.
+
+### Guidance:
+1. **Lock Down ""admin_test"" Account**: Immediately disable or closely monitor any suspicious accounts involved in log activities, especially ""admin_test"".
+2. **Audit Active Directory and User Accounts**: Review all recent changes to detect any unauthorized accounts or privilege escalation attempts.
+3. **Enhance Monitoring**: Enable enhanced logging and monitoring to detect any continued attempts at unauthorized access.
+4. **Conduct a Full Security Audit**: Assess the system for any malicious software or further indicators of compromise.
+5. **Forensic Investigation**: Consider engaging a digital forensic team to analyze the extent of the breach and ensure the integrity of critical systems."
+PureLocker Ransom Note,"Upon analyzing the event logs from the Windows host named ""Server002,"" there are several points of interest indicative of suspicious or potentially malicious activity:
+
+### Key Findings:
+
+1. **Clearing of Event Logs:**
+   - Events with ID `104` in the System log indicate the System and Windows PowerShell event logs were cleared by a user named `admin_test`. Such activities can be indicative of an attempt to cover tracks on the system after conducting potentially malicious activities.
+
+2. **Command Use for Clearing Logs:**
+   - The Sysmon logs show processes with `wevtutil.exe` being used by `admin_test` to clear logs (e.g., Event ID `17957` showing `CommandLine` as `""C:\Windows\system32\wevtutil.exe"" cl Application`). This tool is commonly misused by attackers to erase logs.
+
+3. **Suspicious PowerShell and cmd Command Activity:**
+   - System logs show the use of `cmd.exe` with a command that echos Purelocker Ransom Note (identified as tactic `T1486 - Purelocker Ransom Note`) into a text file on the Desktop (`Event ID 17981`). This is a strong indicator of ransomware activity or simulation.
+
+4. **Time Change Events:**
+   - Event ID `4616` in the Security log indicates time change activities by `LOCAL SERVICE`. This could either be benign or an attempt to manipulate timestamps on a system to obscure logging results.
+
+### Detailed Assessment:
+
+The logs indicate suspicious behavior with potential signs of system compromise:
+- The clearing of logs is a significant red flag as it suggests an intention to hide actions on the system. This is coupled with evidence of misuse of system administrative tools such as `wevtutil.exe`.
+- The cmd command directly related to creating a ransomware note is strongly indicative of possible malware activity, highlighting a transition from suspicious to potentially malicious intent.
+- Log entries indicating the time change, while potentially benign, combined with the above indicators, can suggest the manipulation of system settings by unauthorized users.
+
+### Resolution: **MALICIOUS**
+
+Based on the evidence provided, the activities observed in these logs demonstrate clear malicious intent, with indicators of possible ransomware activity and deliberate clearing of logs to cover tracks. 
+
+### Guidance on How to Proceed:
+
+1. **Immediate Response:**
+   - Discontinue the use of ""Server002"" from the network to prevent further potential spread of malicious software.
+   - Begin incident response procedures to assess the full scope of the compromise.
+   
+2. **Forensic Investigation:**
+   - Retrieve and preserve all available logs, including network traffic logs and backups, for further forensic analysis.
+   - Investigate any data exfiltration or unauthorized access that may have occurred.
+
+3. **Review and Mitigation:**
+   - Perform a comprehensive review of user accounts, especially focusing on activity under the `admin_test` account.
+   - Secure systems by applying patches, updating antivirus software, and monitoring for anomalous activities.
+
+4. **Report the Incident:**
+   - Formally report this incident to appropriate internal and external security teams and regulatory bodies as necessary.
+   - Consider user education programs and reviews of policies to prevent future incidents.
+
+Based on the logs reviewed, the observed activity is consistent with malicious behavior, requiring immediate attention and remediation."
+Windows - Overwrite file with SysInternals SDelete,"Upon analyzing the provided logs from the Windows host, Server002, several suspicious activities have been identified:
+
+1. **Event Log Clearing**:
+   - **Security Log Clearing**: Event ID 1102 logged at ""2024-10-26 19:14:36"" indicates the security logs were cleared by the user ""admin_test"". This is a notable action suggesting an attempt to cover tracks of potential malicious activity.
+   - **System Log Clearing**: Event ID 104 shows that system logs, including Windows PowerShell logs, were cleared by the same user. This behavior is highly suspicious since clearing logs is typically done to hide unauthorized actions.
+
+2. **Use of PowerShell for Potentially Malicious Activity**:
+   - The PowerShell logs indicate execution of a script that interacts with a tool named `sdelete.exe` on ""C:\\Users\\ADMIN_~1\\AppData\\Local\\Temp\\ExternalPayloads\\T1485.txt"" (PowerShell Log Event IDs 1069-1075). This tool belongs to Sysinternals and is often used to securely delete files beyond recovery. The associated paths and file (`T1485.txt`) are linked to known malicious testing suite Atomic Red Team which suggests data deletion (a tactic in cybersecurity attacks).
+
+3. **Reported Commands Executed**:
+   - `wevtutil.exe cl` commands were executed multiple times (Sysmon Log Event IDs 17977, 17981, 17985, and 17989) which aligns with event log clearing actions.
+   - The use of `HOSTNAME.EXE` and `whoami.exe` in quick succession (Event ID 17997 and 18001 respectively) can be part of reconnaissance to check system and user information in an unauthorized manner.
+
+4. **Command Execution by SYSTEM**:
+   - The scheduled tasks and command executions using `taskhostw.exe`, `Compattelrunner.exe`, and other system executables indicate SYSTEM account activity. While not inherently malicious, they should be correlated with scheduled tasks/jobs, especially since they occur around the same timeframe of suspicious activity.
+
+Given these observations, the overall assessment of the logs indicates potential malicious activities including log deletion and unauthorized use of PowerShell, combined with secure delete operations. The identification of clearing logs and using known tools for file deletion strongly indicate attempts to hide activities indicative of compromise or preparation for malicious actions.
+
+**Resolution**: **MALICIOUS**
+
+**Guidance**:
+- Immediately conduct a full forensic investigation on `SERVER002` to understand the scope and impact of the activity.
+- Determine the source and intent of the PowerShell scripts and the sdelete.exe binary.
+- Review and audit user accounts, particularly ""admin_test"", for unauthorized access or use.
+- Implement or review existing security measures, such as enhanced monitoring and log retention policies, to prevent similar future occurrences."
+Windows - Delete Volume Shadow Copies,"Based on the analysis of the provided logs, several indicators of potentially malicious activity have been identified:
+
+1. **Use of `vssadmin.exe`:**
+    - The use of `vssadmin.exe delete shadows /all /quiet` is suspicious. Threat actors often use this command to delete shadow copies to prevent the recovery of encrypted files, typically indicative of ransomware activity. The presence of `vssadmin.exe list shadows` command also suggests an attempt to check for existing shadow copies before potentially executing malicious commands to delete them.
+
+2. **Clearing of Event Logs:**
+   - The events indicating the clearing of system, security, and PowerShell event logs (with Event IDs 104 and 1102) are common tactics used by attackers to remove evidence of their activity and make forensic analysis more difficult.
+
+3. **Command Line Usage by `admin_test`:**
+   - The `admin_test` user executed `wevtutil` commands to clear logs. The execution context with high integrity level and the command history is consistent with actions meant to obfuscate user actions.
+
+4. **Sequence and Timing of Actions:**
+   - The sequence of executing `vssadmin` and `wevtutil` followed by clearing logs happens in quick succession, which is characteristic of automated scripts or malicious actions focusing on ransomware deployment.
+
+**Threats and Risks Identified:**
+- The actions detailed in the logs are consistent with malicious activity, specifically potential ransomware behavior, and attempts to cover tracks by cleaning logs.
+- The actions taken could suggest an ongoing compromise or a recent ransomware attack.
+
+**Guidance:**
+- Immediate containment should be considered for the affected system (Server002) to prevent further spread or damage.
+- A full forensic investigation should be conducted to understand the extent of the breach.
+- Restore any backed-up versions of logs and any other critical data if needed.
+- Review and enhance security measures, such as improved monitoring and logging, user behavior analytics, and endpoint security solutions.
+
+**Resolution:**
+- **MALICIOUS** - The logs contain clear indicators of malicious activity. Immediate remedial action is warranted."
+Logoff System - Windows,"Upon analyzing the provided event logs from the Windows host, there are multiple indicators that suggest potential suspicious activity, primarily involving log manipulation and process execution. Here is a detailed analysis of the events:
+
+1. **Log File Clearing**:
+   - **System and Security Log Cleared**: The System log (EventID: 104) was cleared by a user with the username ""admin_test"". The Security log (EventID: 1102) was also cleared by the same user at nearly the same timestamp. Clearing logs can often indicate an attempt to cover tracks, which is a common behavior in post-compromise scenarios to hide evidence of malicious activities.
+
+2. **Use of `wevtutil.exe`**:
+   - **Repeated Usage**: There are multiple entries of `wevtutil.exe` being executed with the command-line argument to clear (`cl`) various logs: Application, System, Security, and Windows PowerShell logs. This tool is typically used for managing event logs in Windows, and its command-line usage here is explicitly to clear logs, reinforcing the suspicion of covering tracks.
+
+3. **Process Execution Analysis**:
+   - Multiple processes such as `cmd.exe`, `shutdown.exe`, `whoami.exe`, and `hostname.exe` were executed. Particularly, `cmd.exe` was executed with a shutdown command which indicates an attempt to log off or shutdown the system, possibly to disrupt further logging or detection efforts.
+   - Processes were executed with a high integrity level, which might be indicative of elevated privileges being used.
+
+4. **Edge Update Entries**:
+   - The entries related to Microsoft Edge Update appear to be automatic update processes conducted under the `NT AUTHORITY\SYSTEM` user. These appear normal and consistent with expected system update activities.
+
+**Conclusion and Assessment**:
+- The activity of clearing log files using `wevtutil.exe` by the user ""admin_test"" is highly suspicious and indicative of an attempt to hide potential malicious actions.
+- The combination of actions (log clearing and system commands like shutdown) suggests an effort to obscure activities performed on the system.
+
+**Resolution**: Given the combination of log clearing events and command-line executions aimed at system shutdown or log management, the behavior observed is strongly concerning and suggests potential malicious intent.
+
+**Resolution Status**: **MALICIOUS**
+
+**Recommendation**:
+- Initiate a thorough forensic investigation on the host to identify any unauthorized access or malicious software.
+- Review IAM policies and access logs to determine how the user ""admin_test"" obtained such privileges. 
+- Ensure security monitoring tools are actively logging to detect further similar actions.
+- Implement alerting for specific event IDs such as log clearing (1102, 104) and command-line execution that involves `wevtutil.exe`."
+Azure AD - Delete user via Azure AD PowerShell,"### Analysis of Windows Event Logs
+
+Upon careful investigation of the provided logs, the following analysis outlines key indicators of potentially malicious activities:
+
+1. **Log Clearing Events:**
+   - System and Security logs were cleared by the user ""admin_test"" (Event ID 104 in System logs and Event ID 1102 in Security logs). Clearing of logs, especially by a user with administrative privileges, can be a sign of an attempt to cover tracks post-compromise.
+
+2. **Unusual Command-Line Execution:**
+   - **Sysmon Events:**
+     - Powershell executed with the command `""C:\Windows\system32\wevtutil.exe"" cl`, which is used to clear event logs, suggesting possible log tampering or track covering.
+     - A PowerShell command to connect to AzureAD and remove a user, `Remove-AzureADUser -ObjectId $userprincipalname`, was executed by ""admin_test"". This command is suspicious as it indicates administrative control over Azure AD, which could lead to account misuse or service disruption.
+   - **PowerShell Events:**
+     - Reflects the execution of PowerShell commands related to AzureAD user management, which is suspicious if not authorized or expected.
+
+3. **Event Log Correspondence:**
+   - Timing between events such as log clearing and executing potentially harmful PowerShell scripts aligns tightly, indicating a coordinated and possibly automated process executed with malicious intent.
+
+4. **Privilege Escalation and Elevated Tokens (Security Events):**
+   - Event ID 4672 shows a user obtaining several high-level privileges, which could indicate an attempt to gain unauthorized access or escalate privileges.
+
+### Assessment
+
+The logs demonstrate several incidents that align with malicious behavior patterns:
+- **Log clearing** suggests an attempt to erase evidence, a common tactic following unauthorized actions.
+- **Execution of PowerShell scripts** involving AzureAD manipulation shows potential misuse of administrative privileges.
+- **Privileged operations and escalation** indicate possible unauthorized access attempts.
+
+### Conclusion and Resolution
+
+Based on the provided logs:
+- **Resolution: MALICIOUS**
+
+### Guidance on How to Proceed
+
+1. **Immediate Containment:**
+   - Ensure the user ""admin_test"" is investigated, and relevant accounts are secured.
+   - Conduct a broader investigation to determine any further compromises.
+
+2. **Log Analysis and Recovery:**
+   - Restore cleared logs, if possible, from backups for a thorough review.
+   - Enable stricter monitoring and alerting for log-clearing activities.
+
+3. **Review of User Activities:**
+   - Scrutinize recent activity from ""admin_test"" and other privileged users for any unauthorized or suspicious actions.
+
+4. **Enhancing Security Measures:**
+   - Enhance endpoint security, including deploying anti-malware tools and conducting regular auditing of administrative actions.
+   - Consider implementing multi-factor authentication (MFA) and robust logging for AzureAD.
+
+5. **Forensic Investigation:**
+   - Engage a Digital Forensics and Incident Response (DFIR) team to perform a detailed investigation and ensure no further threats are lurking within the network."
+Windows - Stop service using net.exe,"Upon reviewing the provided Windows event logs, key indicators suggest potentially malicious activity. Here are the relevant findings:
+
+1. **Log Clearance Detected**: There are multiple instances where event logs, specifically the System, Windows PowerShell, and Security logs, were cleared by the user `admin_test`:
+   - System Log Cleared (`EventID: 104`)
+   - Windows PowerShell Log Cleared
+   - Security Log Cleared (`EventID: 1102`)
+   
+   Log clearing is typically suspicious, as it can be an indication of an attempt to cover tracks after potentially malicious activity.
+
+2. **Command Execution**: A sequence of command executions was identified that involved stopping the Windows Print Spooler service:
+   - PowerShell was used to execute a command that included `net.exe stop spooler`, which may denote an attempt to disable a service for malicious purposes, such as facilitating further unauthorized actions or potentially exploiting printer-related vulnerabilities.
+
+3. **Privilege Usage**: There is a record of privilege usage by the user `admin_test`:
+   - Event 4672 indicates the assignment of several high-level privileges (SeSecurityPrivilege, SeDebugPrivilege, etc.) to the user.
+   
+   The assignment or use of such privileges in conjunction with other suspicious activities further raises concerns about potential unauthorized actions.
+
+4. **Time Change**: There are events indicating a system time change, which can be used to confuse event timelines and hinder forensic analysis (EventID: 24 and 4616).
+
+5. **Executable Activities**: Execution of system utilities, such as `wevtutil.exe` and `conhost.exe`, appears sporadically around the time of suspicious log activities, which aligns with potential efforts to manipulate or query logs programmatically.
+
+Given these activities and their combination, the logs showcase a high likelihood of compromise. The consistent theme of log clearing and process execution patterns strongly suggests an effort to conceal unauthorized activities.
+
+### Assessment:
+**Resolution: MALICIOUS**
+
+### Guidance:
+- Immediately perform a thorough forensic analysis on `Server002` to identify any unauthorized changes or access.
+- Review user account `admin_test` for unauthorized access or compromise.
+- Revoke and re-validate credentials for any accounts involved.
+- Investigate network logs for suspicious connections tied to user activity.
+- Patch and secure any systems that were potentially exploited, such as services stopped or altered (e.g., Print Spooler).
+- Enhance security monitoring and logging to prevent and quickly detect similar incidents in the future."
