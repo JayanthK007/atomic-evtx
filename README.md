@@ -45,12 +45,15 @@ Within the JSON logs, the following strings were replaced with a string `data`:
 - `payload`
 - `Red team`
 
+
 Additionally, event entries containing any of the following strings were removed from the JSON logs, as they represent residual artifacts from the dataset generation process:
 - `"wevtutil.exe" cl Microsoft-Windows-Sysmon/Operational`
 - `"wevtutil.exe" cl Application`
 - `"wevtutil.exe" cl System`
 - `"wevtutil.exe" cl Security`
 - `"wevtutil.exe" cl "Windows PowerShell"`
+- `wevtutil.exe`
+- `conhost.exe`
 ***
 ### **`attacks_by_category_atomic_and_tools_removed`**  
 This directory contains **raw EVTX files with JSON logs filtered**  to exclude entries related to the Atomic Red Team Framework, pre-attack-simulation log-clearing events, and offensive security tool names (e.g., WinPwn.ps1, Meterpreter). This dataset is considered the most "challenging", as the identification of malicious activity relies solely on either executed PowerShell scripts (which require more detailed analysis) or known combinations of Events (or Event IDs) that are indicative of malicious or suspicious behavior.
