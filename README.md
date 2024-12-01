@@ -10,7 +10,6 @@ In total, the attack category technique and attack count in each category is as 
 
 | Attack Cycle Stage | Count of Simulated Techniques |
 |--------------|-------|
-| Reconnaissance | 1 |
 | Initial Access | 12 |
 | Exfiltration | 14 |
 | Lateral Movement | 21 |
@@ -21,7 +20,7 @@ In total, the attack category technique and attack count in each category is as 
 | Execution | 61 |
 | Credential Access | 118 |
 | Privilege Escalation | 119 |
-| Discovery | 180 |
+| Discovery | 181 |
 | Defense Evasion | 367 |
 | **Total** | **1064** |
 
